@@ -1,0 +1,8 @@
+{
+    "Author": "yfthbr",
+    "Name": "Friendly Potato",
+    "Punchline": "Informational plugin",
+    "Description": "/friendlypotato - show settings menu",
+    "ApplicableVersion": "any",
+    "Tags": ["info"]
+}
