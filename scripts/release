@@ -3,5 +3,39 @@
 set -e
 set -u
 
+dotnet build FriendlyPotato/FriendlyPotato.csproj -c Release --output ./out
+
 versionize
 git push --follow-tags
+
+VERSION=$(versionize inspect)
+echo <<<EOF
+[
+  {
+    "Author": "YF",
+    "Name": "Friendly Potato",
+    "InternalName": "friendly-potato",
+    "AssemblyVersion": "$VERSION",
+    "Description": "An informational plugin.",
+    "ApplicableVersion": "any",
+    "RepoUrl": "https://github.com/Sidiousious/friendly-potato",
+    "Tags": [
+      "Hunt",
+      "Information"
+    ],
+    "DalamudApiLevel": 10,
+    "LoadPriority": 0,
+    "DownloadCount": 69,
+    "IconUrl": "https://yfplugins.kinkop.eu/friendlypotatologo.png",
+    "Punchline": "An information plugin.",
+    "IsHide": "False",
+    "IsTestingExclusive": "False",
+    "DownloadLinkInstall": "https://yfplugins.kinkop.eu/friendly-potato/$VERSION.zip",
+    "DownloadLinkTesting": "https://yfplugins.kinkop.eu/friendly-potato/$VERSION.zip",
+    "DownloadLinkUpdate": "https://yfplugins.kinkop.eu/friendly-potato/$VERSION.zip"
+  }
+]
+EOF > repository.json
+
+aws s3 --profile kinkop cp out/FriendlyPotato/latest.zip s3://yfplugins/friendly-potato/$VERSION.zip
+aws s3 --profile kinkop cp repository.json s3://yfplugins/friendly-potato/repository.json
