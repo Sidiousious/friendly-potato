@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.0.10"></a>
+## 1.0.10 (2024-10-24)
+
+### Bug Fixes
+
+* player list height when doomed players visible
+
 <a name="1.0.9"></a>
 ## 1.0.9 (2024-10-24)
 
