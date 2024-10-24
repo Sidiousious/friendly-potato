@@ -1,0 +1,3 @@
+#!/usr/bin/env fish
+
+dotnet build && cp ./FriendlyPotato/bin/x64/Debug/FriendlyPotato.dll ~/.xlcore/protonprefix/drive_c/FriendlyPotato.dll
