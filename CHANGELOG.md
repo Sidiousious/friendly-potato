@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.0.8"></a>
+## 1.0.8 (2024-10-24)
+
+### Bug Fixes
+
+* internal name to match dll
+
 <a name="1.0.7"></a>
 ## 1.0.7 (2024-10-24)
 
