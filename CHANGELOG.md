@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.0.6"></a>
+## 1.0.6 (2024-10-24)
+
+### Bug Fixes
+
+* repository.json generation
+
 <a name="1.0.5"></a>
 ## 1.0.5 (2024-10-24)
 
