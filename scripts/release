@@ -9,7 +9,7 @@ versionize
 git push --follow-tags
 
 VERSION=$(versionize inspect)
-echo <<<EOF
+echo << EOF
 [
   {
     "Author": "YF",
@@ -19,10 +19,10 @@ echo <<<EOF
     "Description": "An informational plugin.",
     "ApplicableVersion": "any",
     "RepoUrl": "https://github.com/Sidiousious/friendly-potato",
-    "Tags": [
+    "Tags": \[
       "Hunt",
       "Information"
-    ],
+    \],
     "DalamudApiLevel": 10,
     "LoadPriority": 0,
     "DownloadCount": 69,
