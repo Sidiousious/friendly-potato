@@ -14,6 +14,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using ObjectKind = Dalamud.Game.ClientState.Objects.Enums.ObjectKind;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Game.ClientState.Objects.SubKinds;
@@ -40,6 +41,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
     public Configuration Configuration { get; init; }
 
     public readonly WindowSystem WindowSystem = new("FriendlyPotato");
+    public readonly Version Version = Assembly.GetExecutingAssembly().GetName().Version!;
     private ConfigWindow ConfigWindow { get; init; }
     private DtrClickWindow PlayerListWindow { get; init; }
     private IDtrBarEntry NearbyDtrBarEntry { get; set; }
