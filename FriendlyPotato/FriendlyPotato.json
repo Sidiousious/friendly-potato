@@ -1,8 +1,13 @@
 {
-    "Author": "yfthbr",
+    "Author": "YF",
     "Name": "Friendly Potato",
-    "Punchline": "Informational plugin",
+    "InternalName": "FriendlyPotato",
     "Description": "/friendlypotato - show settings menu",
-    "ApplicableVersion": "any",
-    "Tags": ["info"]
+    "RepoUrl": "https://github.com/Sidiousious/friendly-potato",
+    "Tags": ["Hunt", "Information"],
+    "IconUrl": "https://yfplugins.kinkop.eu/friendlypotatologo.png",
+    "Punchline": "An information plugin.",
+    "DownloadLinkInstall": "https://yfplugins.kinkop.eu/friendly-potato/1.0.7.zip",
+    "DownloadLinkTesting": "https://yfplugins.kinkop.eu/friendly-potato/1.0.7.zip",
+    "DownloadLinkUpdate": "https://yfplugins.kinkop.eu/friendly-potato/1.0.7.zip"
 }

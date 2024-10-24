@@ -1,3 +1,3 @@
 #!/usr/bin/env fish
 
-dotnet build && cp ./FriendlyPotato/bin/x64/Debug/FriendlyPotato.dll ~/.xlcore/protonprefix/drive_c/FriendlyPotato.dll
+dotnet build && cp ./FriendlyPotato/bin/x64/Debug/FriendlyPotato.dll ~/.xlcore/protonprefix/drive_c/FriendlyPotato.dll && cp ./FriendlyPotato/bin/x64/Debug/FriendlyPotato.json ~/.xlcore/protonprefix/drive_c/FriendlyPotato.json && sed -i 's/"friendly-potato"/"friendly-potato-dev"/g' ~/.xlcore/protonprefix/drive_c/FriendlyPotato.json
