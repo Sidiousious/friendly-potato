@@ -14,7 +14,7 @@ cat << EOF > repository.json
   {
     "Author": "YF",
     "Name": "Friendly Potato",
-    "InternalName": "friendly-potato",
+    "InternalName": "FriendlyPotato",
     "AssemblyVersion": "$VERSION",
     "Description": "An informational plugin.",
     "ApplicableVersion": "any",
