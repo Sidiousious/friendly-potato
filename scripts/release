@@ -1,4 +1,4 @@
-#!/usr/bin/bash 
+#!/usr/bin/env bash
 
 set -e
 set -u
@@ -9,7 +9,7 @@ versionize
 git push --follow-tags
 
 VERSION=$(versionize inspect)
-echo << EOF > repository.json
+cat << EOF > repository.json
 [
   {
     "Author": "YF",
