@@ -9,7 +9,7 @@ versionize
 git push --follow-tags
 
 VERSION=$(versionize inspect)
-echo << EOF
+echo << EOF > repository.json
 [
   {
     "Author": "YF",
@@ -35,7 +35,7 @@ echo << EOF
     "DownloadLinkUpdate": "https://yfplugins.kinkop.eu/friendly-potato/$VERSION.zip"
   }
 ]
-EOF > repository.json
+EOF
 
 aws s3 --profile kinkop cp out/FriendlyPotato/latest.zip s3://yfplugins/friendly-potato/$VERSION.zip
 aws s3 --profile kinkop cp repository.json s3://yfplugins/friendly-potato/repository.json
