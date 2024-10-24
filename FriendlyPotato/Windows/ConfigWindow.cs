@@ -17,7 +17,7 @@ public class ConfigWindow : Window, IDisposable
         Flags = ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar |
                 ImGuiWindowFlags.NoScrollWithMouse;
 
-        Size = new Vector2(300, 180);
+        Size = new Vector2(300, 300);
         SizeCondition = ImGuiCond.Always;
 
         configuration = plugin.Configuration;
@@ -60,5 +60,34 @@ public class ConfigWindow : Window, IDisposable
             configuration.NearbyFriends = nearbyFriends;
             configuration.Save();
         }
+
+        var nearbyWees = configuration.NearbyWees;
+        if (ImGui.Checkbox("Show nearby Wee Eas", ref nearbyWees))
+        {
+            configuration.NearbyWees = nearbyWees;
+            configuration.Save();
+        }
+        
+        var nearbyDooms = configuration.NearbyDoomed;
+        if (ImGui.Checkbox("Show players hit with Doom", ref nearbyDooms))
+        {
+            configuration.NearbyDoomed = nearbyDooms;
+            configuration.Save();
+        }
+        
+        // Debug
+        ImGui.Spacing();
+        ImGui.Separator();
+        ImGui.Spacing();
+        
+        var debugStatuses = configuration.DebugStatuses;
+        if (ImGui.Checkbox("Log debug statuses", ref debugStatuses))
+        {
+            configuration.DebugStatuses = debugStatuses;
+            configuration.Save();
+        }
+        ImGui.TextWrapped(
+            "Player statuses logged as debug, other characters as verbose.");
+        ImGui.TextWrapped("THIS WILL FLOOD YOUR LOG.");
     }
 }

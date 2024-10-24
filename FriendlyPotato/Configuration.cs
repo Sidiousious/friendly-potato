@@ -12,6 +12,9 @@ public class Configuration : IPluginConfiguration
     public bool NearbyDead { get; set; } = true;
     public bool NearbyOffWorld { get; set; } = true;
     public bool NearbyFriends { get; set; } = true;
+    public bool NearbyWees { get; set; } = false;
+    public bool NearbyDoomed { get; set; } = false;
+    public bool DebugStatuses { get; set; } = false;
 
     // the below exist just to make saving less cumbersome
     public void Save()

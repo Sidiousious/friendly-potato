@@ -15,8 +15,10 @@ using ObjectKind = Dalamud.Game.ClientState.Objects.Enums.ObjectKind;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using System.Collections.Generic;
 using System.Text;
+using Dalamud.Game.ClientState.Keys;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.ClientState.Objects;
+using FFXIVClientStructs.FFXIV.Client.Game.Control;
 
 namespace FriendlyPotato;
 
@@ -30,6 +32,8 @@ public sealed class FriendlyPotato : IDalamudPlugin
     [PluginService] internal static IObjectTable ObjectTable { get; private set; } = null!;
     [PluginService] internal static IClientState ClientState { get; private set; } = null!;
     [PluginService] internal static ITargetManager TargetManager { get; private set; } = null!;
+    [PluginService] internal static IPluginLog PluginLog { get; private set; } = null!;
+    [PluginService] internal static IKeyState KeyState { get; private set; } = null!;
 
     private const string CommandName = "/friendlypotato";
 
@@ -64,6 +68,11 @@ public sealed class FriendlyPotato : IDalamudPlugin
         NearbyDtrBarEntry = DtrBar.Get("FriendlyPotatoNearby");
         NearbyDtrBarEntry.OnClick += () =>
         {
+            if (KeyState[VirtualKey.CONTROL])
+            {
+                ToggleConfigUI();
+                return;
+            }
             PlayerListWindow.Toggle();
         };
 
@@ -85,7 +94,6 @@ public sealed class FriendlyPotato : IDalamudPlugin
 
     private void FrameworkOnUpdateEvent(IFramework framework)
     {
-        UpdatePlayerTypes();
         UpdatePlayerList();
         UpdateDtrBar();
     }
@@ -95,33 +103,132 @@ public sealed class FriendlyPotato : IDalamudPlugin
         EnsureIsOnFramework();
         var players = ObjectTable.Where(player => player != ClientState.LocalPlayer && player is IPlayerCharacter).Cast<IPlayerCharacter>().ToList();
         players.Sort((a, b) => string.Compare(a.Name.ToString(), b.Name.ToString(), StringComparison.Ordinal));
-        playerInformation.Players = players;
+        playerInformation.Players = players.Select(p => new PlayerCharacterDetails
+        {
+            Character = p
+        }).ToList();
+        UpdatePlayerTypes();
     }
 
     private void UpdatePlayerTypes()
     {
         const int actorTablePlayerLength = 200;
+        const uint weeEaId = 423;
 
         var friends = 0;
         var dead = 0;
         var offWorlders = 0;
-        var total = -1; // -1 to account for local player
+        var total = 0;
+        var wees = 0;
+        var doomed = 0;
+
+        if (Configuration.DebugStatuses)
+        {
+            unsafe
+            {
+                GameObject* playerObject = GameObjectManager.Instance()->Objects.IndexSorted[0];
+                var cPtr = (Character*)playerObject;
+                var bPtr = (BattleChara*)cPtr;
+                var statuses = bPtr->GetStatusManager()->Status;
+                foreach (ref var status in statuses)
+                {
+                    if (status.RemainingTime > 0)
+                    {
+                        PluginLog.Debug(
+                            $"Player {cPtr->NameString} @ {cPtr->HomeWorld} has status {status.StatusId} - remaining: {status.RemainingTime}");
+                    }
+                }
+            }
+        }
 
         unsafe void CheckPlayer(int i)
         {
             GameObject* gameObject = GameObjectManager.Instance()->Objects.IndexSorted[i];
             var cPtr = (Character*)gameObject;
-            if (gameObject == null || !gameObject->IsCharacter()) return;
+            if (gameObject == null) return;
+            
+            // Minions
+            if ((ObjectKind)cPtr->GameObject.ObjectKind == ObjectKind.Companion)
+            {
+                if (cPtr->GameObject.BaseId == weeEaId)
+                {
+                    wees++;
+                }
+            }
+            
+            if (!gameObject->IsCharacter()) return;
             if ((ObjectKind)cPtr->GameObject.ObjectKind != ObjectKind.Player) return;
+            
+            var details = playerInformation.Players.Find(p =>
+                p.Character.Name.ToString() == cPtr->NameString && p.Character.HomeWorld.Id == cPtr->HomeWorld
+            );
 
-            if (cPtr->IsFriend) friends++;
-            if (cPtr->IsDead()) dead++;
-            if (cPtr->IsWanderer() || cPtr->IsTraveler() || cPtr->IsVoyager()) offWorlders++;
+            if (details == null)
+            {
+                PluginLog.Warning($"details is null for {cPtr->NameString} @ {cPtr->HomeWorld}");
+            }
+
+            if (cPtr->IsFriend)
+            {
+                friends++;
+                details?.AddKind(PlayerCharacterKind.Friend);
+            }
+
+            if (cPtr->IsDead())
+            {
+                dead++;
+                details?.AddKind(PlayerCharacterKind.Dead);
+            }
+
+            if (cPtr->IsWanderer() || cPtr->IsTraveler() || cPtr->IsVoyager())
+            {
+                offWorlders++;
+                details?.AddKind(PlayerCharacterKind.OffWorlder);
+            }
+
+            if (details != null)
+            {
+                var isRaised = false;
+                var isDoomed = false;
+
+                var battleChara = (BattleChara*)cPtr;
+                var statuses = battleChara->GetStatusManager()->Status;
+                foreach (ref var status in statuses)
+                {
+                    if (Configuration.DebugStatuses && status.RemainingTime > 0)
+                    {
+                        PluginLog.Verbose(
+                            $"Player {cPtr->NameString} @ {cPtr->HomeWorld} has status {status.StatusId} - remaining: {status.RemainingTime}");
+                    }
+                    switch (status.StatusId)
+                    {
+                        case 148 or 1140: // Raised
+                            isRaised = true;
+                            break;
+                        case 1970:
+                            isDoomed = true;
+                            break;
+                    }
+                }
+
+                if (isRaised)
+                {
+                    details.Raised = true;
+                }
+
+                if (isDoomed)
+                {
+                    details.Doomed = true;
+                    details.AddKind(PlayerCharacterKind.Doomed);
+                    doomed++;
+                }
+            }
 
             total++;
         }
 
-        for (var i = 0; i < actorTablePlayerLength; i++)
+        // 0 is local player and only counting other people here, so start from 1
+        for (var i = 1; i < actorTablePlayerLength; i++)
         {
             CheckPlayer(i);
         }
@@ -129,6 +236,8 @@ public sealed class FriendlyPotato : IDalamudPlugin
         playerInformation.Dead = dead;
         playerInformation.OffWorlders = offWorlders;
         playerInformation.Total = total;
+        playerInformation.Wees = wees;
+        playerInformation.Doomed = doomed;
     }
 
     private void UpdateDtrBar()
@@ -153,6 +262,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
             payloads.Add(new IconPayload(BitmapFontIcon.Returner));
             payloads.Add(new TextPayload(playerInformation.Friends.ToString()));
         }
+        
         if (Configuration.NearbyDead)
         {
             tooltip.Append(tooltipSeparator).Append("Dead: ").Append(playerInformation.Dead);
@@ -160,12 +270,29 @@ public sealed class FriendlyPotato : IDalamudPlugin
             payloads.Add(new IconPayload(BitmapFontIcon.Disconnecting));
             payloads.Add(new TextPayload(playerInformation.Dead.ToString()));
         }
+        
         if (Configuration.NearbyOffWorld)
         {
             tooltip.Append(tooltipSeparator).Append("Off-Worlders: ").Append(playerInformation.OffWorlders);
             payloads.Add(new TextPayload(dtrSeparator));
             payloads.Add(new IconPayload(BitmapFontIcon.CrossWorld));
             payloads.Add(new TextPayload(playerInformation.OffWorlders.ToString()));
+        }
+
+        if (Configuration.NearbyWees)
+        {
+            tooltip.Append(tooltipSeparator).Append("Wees: ").Append(playerInformation.Wees);
+            payloads.Add(new TextPayload(dtrSeparator));
+            payloads.Add(new IconPayload(BitmapFontIcon.Meteor));
+            payloads.Add(new TextPayload(playerInformation.Wees.ToString()));
+        }
+
+        if (Configuration.NearbyDoomed)
+        {
+            tooltip.Append(tooltipSeparator).Append("Doomed: ").Append(playerInformation.Doomed);
+            payloads.Add(new TextPayload(dtrSeparator));
+            payloads.Add(new IconPayload(BitmapFontIcon.OrangeDiamond));
+            payloads.Add(new TextPayload(playerInformation.Doomed.ToString()));
         }
 
         NearbyDtrBarEntry.Text = new SeString(payloads);
