@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Linq;
 using System.Numerics;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
-using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using ImGuiNET;
 
 namespace FriendlyPotato.Windows;
@@ -32,7 +30,7 @@ public class DtrClickWindow : Window, IDisposable
 
     public override void PreDraw()
     {
-        var dynamicHeight = (ImGui.GetTextLineHeightWithSpacing() * (playerInformation.Dead + 4)) - ImGui.GetFrameHeight() - ImGui.GetStyle().WindowPadding.Y + ImGuiHelpers.GlobalScale;
+        var dynamicHeight = (ImGui.GetTextLineHeightWithSpacing() * (playerInformation.Displayed + 4)) - ImGui.GetFrameHeight() - ImGui.GetStyle().WindowPadding.Y + ImGuiHelpers.GlobalScale;
         SizeCondition = ImGuiCond.Always;
         Size = new Vector2(300f, Math.Min(700f, dynamicHeight));
         Position = new Vector2(mousePosition.X - 100, mousePosition.Y + 20);

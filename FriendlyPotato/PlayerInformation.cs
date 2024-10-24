@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Diagnostics.SymbolStore;
+using System.Linq;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 
 namespace FriendlyPotato;
@@ -13,6 +14,7 @@ public class PlayerInformation
     public int Doomed { get; set; }
     public int Wees { get; set; }
     public List<PlayerCharacterDetails> Players { get; set; } = [];
+    public int Displayed => Players.Count(a => a.IsKind(PlayerCharacterKind.Dead) || a.IsKind(PlayerCharacterKind.Doomed));
 }
 
 public enum PlayerCharacterKind
