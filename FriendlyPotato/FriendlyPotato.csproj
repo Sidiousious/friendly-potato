@@ -3,8 +3,12 @@
   <Import Project="Dalamud.Plugin.Bootstrap.targets" />
 
   <PropertyGroup>
+    <TargetFramework>net8</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <Version>1.0.1</Version>
-    <Description>A sample plugin.</Description>
+    <Description>An informational plugin.</Description>
     <PackageProjectUrl>https://github.com/sidiousious/friendly-potato</PackageProjectUrl>
     <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
     <IsPackable>false</IsPackable>
