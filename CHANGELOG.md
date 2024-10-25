@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.1.0"></a>
+## 1.1.0 (2024-10-25)
+
+### Features
+
+* add job icons and allow moving and resizing the player list
+
 <a name="1.0.10"></a>
 ## 1.0.10 (2024-10-24)
 
