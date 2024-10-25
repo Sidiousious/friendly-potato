@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Numerics;
 using Dalamud.Game.ClientState.Keys;
-using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 
@@ -12,29 +11,20 @@ public class DtrClickWindow : Window, IDisposable
     private readonly PlayerInformation playerInformation;
     private readonly Configuration configuration;
     private int selectedIdx = -1;
-    private Vector2 mousePosition;
 
     // We give this window a constant ID using ###
     // This allows for labels being dynamic, like "{FPS Counter}fps###XYZ counter window",
     // and the window ID will always be "###XYZ counter window" for ImGui
     public DtrClickWindow(FriendlyPotato plugin, PlayerInformation playerInformation) : base("Friendly Potato Player List###FriendlyPotatoDtrList")
     {
-        Flags = ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoTitleBar;
+        Flags = ImGuiWindowFlags.NoTitleBar;
+        SizeCondition = ImGuiCond.FirstUseEver;
+        Size = new Vector2(300f, 300f);
         this.playerInformation = playerInformation;
         configuration = plugin.Configuration;
     }
 
     public void Dispose() { }
-
-    public override void OnOpen() => mousePosition = ImGui.GetMousePos();
-
-    public override void PreDraw()
-    {
-        var dynamicHeight = (ImGui.GetTextLineHeightWithSpacing() * (playerInformation.Displayed + 4)) - ImGui.GetFrameHeight() - ImGui.GetStyle().WindowPadding.Y + ImGuiHelpers.GlobalScale;
-        SizeCondition = ImGuiCond.Always;
-        Size = new Vector2(300f, Math.Min(700f, dynamicHeight));
-        Position = new Vector2(mousePosition.X - 100, mousePosition.Y + 20);
-    }
 
     public override void Draw()
     {
@@ -60,13 +50,23 @@ public class DtrClickWindow : Window, IDisposable
         {
             var player = playerInformation.Players[i];
             
+#if !DEBUG
             if (!player.IsKind(PlayerCharacterKind.Dead) && !player.IsKind(PlayerCharacterKind.Doomed))
             {
                 continue;
             }
 
-            var raiseText = "";
+            var raiseText = " (dead)";
             var color = new Vector4(1f, 0.6f, 0.6f, 1f);
+#else
+            var color = new Vector4(1f, 1f, 1f, 1f);
+            var raiseText = "";
+            if (player.IsKind(PlayerCharacterKind.Dead))
+            {
+                raiseText = " (dead)";
+                color = new Vector4(1f, 0.6f, 0.6f, 1f);
+            }
+#endif
             if (player.Raised)
             {
                 raiseText = " (raised)";
@@ -79,7 +79,7 @@ public class DtrClickWindow : Window, IDisposable
                 color = new Vector4(1f, 0.6f, 1f, 1f);
             }
             
-            var text = $"{player.Character.Name}  {player.Character.HomeWorld.GameData?.Name ?? "Unknown"}{raiseText}";
+            var text = $"[{player.JobAbbreviation}] {player.Character.Name}  {player.Character.HomeWorld.GameData?.Name ?? "Unknown"}{raiseText}";
             ImGui.PushStyleColor(ImGuiCol.Text, color);
             if (ImGui.Selectable(text, selectedIdx == i))
             {

@@ -100,15 +100,52 @@ public sealed class FriendlyPotato : IDalamudPlugin
         UpdateDtrBar();
     }
 
+    private readonly string[] healers = ["AST", "WHM", "SCH", "SGE"];
+
     private void UpdatePlayerList()
     {
         EnsureIsOnFramework();
         var players = ObjectTable.Where(player => player != ClientState.LocalPlayer && player is IPlayerCharacter).Cast<IPlayerCharacter>().ToList();
-        players.Sort((a, b) => string.Compare(a.Name.ToString(), b.Name.ToString(), StringComparison.Ordinal));
         playerInformation.Players = players.Select(p => new PlayerCharacterDetails
         {
             Character = p
         }).ToList();
+        playerInformation.Players.Sort((a, b) =>
+        {
+            var aIsHealer = healers.Contains(a.JobAbbreviation);
+            var bIsHealer = healers.Contains(b.JobAbbreviation);
+            if (aIsHealer && !bIsHealer)
+            {
+                return -1;
+            }
+
+            if (!aIsHealer && bIsHealer)
+            {
+                return 1;
+            }
+
+            if (a.JobAbbreviation == "RDM" && b.JobAbbreviation != "RDM")
+            {
+                return -1;
+            }
+
+            if (a.JobAbbreviation != "RDM" && b.JobAbbreviation == "RDM")
+            {
+                return 1;
+            }
+
+            if (a.JobAbbreviation == "SMN" && b.JobAbbreviation != "SMN")
+            {
+                return -1;
+            }
+
+            if (a.JobAbbreviation != "SMN" && b.JobAbbreviation == "SMN")
+            {
+                return 1;
+            }
+
+            return string.Compare(a.Character.Name.ToString(), b.Character.Name.ToString(), StringComparison.Ordinal);
+        });
         UpdatePlayerTypes();
     }
 
@@ -207,7 +244,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
                         case 148 or 1140: // Raised
                             isRaised = true;
                             break;
-                        case 1970:
+                        case 1970: // Doom
                             isDoomed = true;
                             break;
                     }

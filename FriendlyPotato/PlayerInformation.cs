@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Diagnostics.SymbolStore;
 using System.Linq;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 
@@ -35,6 +34,8 @@ public class PlayerCharacterDetails
     
     public void AddKind(PlayerCharacterKind kind) => Kind |= (ushort)kind;
     public bool IsKind(PlayerCharacterKind kind) => ((ushort)kind & Kind) != 0;
+
+    public string JobAbbreviation => Character.ClassJob.GameData?.Abbreviation.ToString() ?? string.Empty;
 
     public override string ToString()
     {
