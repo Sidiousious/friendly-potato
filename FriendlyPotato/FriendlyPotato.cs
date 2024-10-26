@@ -137,7 +137,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
                 dead++;
             }
 
-            if (player.Character.HomeWorld != ClientState.LocalPlayer!.CurrentWorld)
+            if (player.Character.HomeWorld.Id != ClientState.LocalPlayer!.CurrentWorld.Id)
             {
                 player.AddKind(PlayerCharacterKind.OffWorlder);
                 offWorlders++;
