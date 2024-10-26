@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 
@@ -12,7 +13,7 @@ public class PlayerInformation
     public int Total => Players.Count;
     public int Doomed { get; set; }
     public int Wees { get; set; }
-    public List<PlayerCharacterDetails> Players { get; set; } = [];
+    public ImmutableList<PlayerCharacterDetails> Players { get; set; } = [];
 }
 
 public enum PlayerCharacterKind

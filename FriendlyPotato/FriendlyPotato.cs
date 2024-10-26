@@ -8,27 +8,22 @@ using System;
 using System.Linq;
 using Dalamud.Game.Gui.Dtr;
 using Dalamud.Game.Text.SeStringHandling;
-using FFXIVClientStructs.FFXIV.Client.Game.Object;
-using FFXIVClientStructs.FFXIV.Client.Game.Character;
 
-using ObjectKind = Dalamud.Game.ClientState.Objects.Enums.ObjectKind;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.Collections.Immutable;
 using System.Reflection;
 using System.Text;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.ClientState.Objects.Enums;
-using FFXIVClientStructs.FFXIV.Client.Game.Control;
 
 namespace FriendlyPotato;
 
 public sealed class FriendlyPotato : IDalamudPlugin
 {
     [PluginService] internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
-    [PluginService] internal static ITextureProvider TextureProvider { get; private set; } = null!;
     [PluginService] internal static ICommandManager CommandManager { get; private set; } = null!;
     [PluginService] internal static IFramework Framework { get; private set; } = null!;
     [PluginService] internal static IDtrBar DtrBar { get; private set; } = null!;
@@ -98,6 +93,10 @@ public sealed class FriendlyPotato : IDalamudPlugin
 
     private void FrameworkOnUpdateEvent(IFramework framework)
     {
+        if (!ClientState.IsLoggedIn)
+        {
+            return;
+        }
         UpdatePlayerList();
         UpdateDtrBar();
     }
@@ -105,11 +104,12 @@ public sealed class FriendlyPotato : IDalamudPlugin
     private void UpdatePlayerList()
     {
         EnsureIsOnFramework();
-        var players = ObjectTable.Where(player => player != ClientState.LocalPlayer && player is IPlayerCharacter).Cast<IPlayerCharacter>().ToList();
-        playerInformation.Players = players.Select(p => new PlayerCharacterDetails
-        {
-            Character = p
-        }).ToList();
+        playerInformation.Players = ObjectTable
+                                    .Where(player => player != ClientState.LocalPlayer && player is IPlayerCharacter)
+                                    .Cast<IPlayerCharacter>().Select(p => new PlayerCharacterDetails
+                                    {
+                                        Character = p
+                                    }).ToImmutableList();
         UpdatePlayerTypes();
     }
 
