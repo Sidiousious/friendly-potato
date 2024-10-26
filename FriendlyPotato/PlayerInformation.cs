@@ -9,11 +9,10 @@ public class PlayerInformation
     public int Friends { get; set; }
     public int Dead { get; set; }
     public int OffWorlders { get; set; }
-    public int Total { get; set; }
+    public int Total => Players.Count;
     public int Doomed { get; set; }
     public int Wees { get; set; }
     public List<PlayerCharacterDetails> Players { get; set; } = [];
-    public int Displayed => Players.Count(a => a.IsKind(PlayerCharacterKind.Dead) || a.IsKind(PlayerCharacterKind.Doomed));
 }
 
 public enum PlayerCharacterKind

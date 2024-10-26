@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Numerics;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface.Windowing;
@@ -11,6 +12,8 @@ public class DtrClickWindow : Window, IDisposable
     private readonly PlayerInformation playerInformation;
     private readonly Configuration configuration;
     private int selectedIdx = -1;
+            
+    private readonly string[] healers = ["AST", "WHM", "SCH", "SGE"];
 
     // We give this window a constant ID using ###
     // This allows for labels being dynamic, like "{FPS Counter}fps###XYZ counter window",
@@ -44,21 +47,53 @@ public class DtrClickWindow : Window, IDisposable
             ImGui.TextWrapped("This window lists dead/doomed players, when those settings are enabled.");
             return;
         }
-        
-        ImGui.Text(string.Join(" & ", typeHeaders) + " Players:");
-        for (var i = 0; i < playerInformation.Players.Count; i++)
-        {
-            var player = playerInformation.Players[i];
-            
+
+        var drawnPlayers = playerInformation.Players
 #if !DEBUG
-            if (!player.IsKind(PlayerCharacterKind.Dead) && !player.IsKind(PlayerCharacterKind.Doomed))
+                                            .Where(p => p.IsKind(PlayerCharacterKind.Dead) || p.IsKind(PlayerCharacterKind.Doomed))
+#endif
+                                            .ToList();
+        drawnPlayers.Sort((a, b) =>
+        {
+            var aIsHealer = healers.Contains(a.JobAbbreviation);
+            var bIsHealer = healers.Contains(b.JobAbbreviation);
+            if (aIsHealer && !bIsHealer)
             {
-                continue;
+                return -1;
             }
 
-            var raiseText = " (dead)";
-            var color = new Vector4(1f, 0.6f, 0.6f, 1f);
-#else
+            if (!aIsHealer && bIsHealer)
+            {
+                return 1;
+            }
+
+            if (a.JobAbbreviation == "RDM" && b.JobAbbreviation != "RDM")
+            {
+                return -1;
+            }
+
+            if (a.JobAbbreviation != "RDM" && b.JobAbbreviation == "RDM")
+            {
+                return 1;
+            }
+
+            if (a.JobAbbreviation == "SMN" && b.JobAbbreviation != "SMN")
+            {
+                return -1;
+            }
+
+            if (a.JobAbbreviation != "SMN" && b.JobAbbreviation == "SMN")
+            {
+                return 1;
+            }
+
+            return string.Compare(a.Character.Name.ToString(), b.Character.Name.ToString(), StringComparison.Ordinal);
+        });
+        
+        ImGui.Text(string.Join(" & ", typeHeaders) + " Players:");
+        for (var i = 0; i < drawnPlayers.Count; i++)
+        {
+            var player = drawnPlayers[i];
             var color = new Vector4(1f, 1f, 1f, 1f);
             var raiseText = "";
             if (player.IsKind(PlayerCharacterKind.Dead))
@@ -66,7 +101,7 @@ public class DtrClickWindow : Window, IDisposable
                 raiseText = " (dead)";
                 color = new Vector4(1f, 0.6f, 0.6f, 1f);
             }
-#endif
+            
             if (player.Raised)
             {
                 raiseText = " (raised)";
