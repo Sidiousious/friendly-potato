@@ -15,6 +15,7 @@ public class Configuration : IPluginConfiguration
     public bool NearbyWees { get; set; } = false;
     public bool NearbyDoomed { get; set; } = false;
     public bool DebugStatuses { get; set; } = false;
+    public bool ShowTotalsInList { get; set; } = true;
 
     // the below exist just to make saving less cumbersome
     public void Save()

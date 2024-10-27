@@ -1,25 +1,28 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using ImGuiNET;
 
 namespace FriendlyPotato.Windows;
 
 public class DtrClickWindow : Window, IDisposable
 {
-    private readonly PlayerInformation playerInformation;
     private readonly Configuration configuration;
 
     private readonly string[] healers = ["AST", "WHM", "SCH", "SGE"];
+    private readonly PlayerInformation playerInformation;
 
     // We give this window a constant ID using ###
     // This allows for labels being dynamic, like "{FPS Counter}fps###XYZ counter window",
     // and the window ID will always be "###XYZ counter window" for ImGui
-    public DtrClickWindow(FriendlyPotato plugin, PlayerInformation playerInformation) : base("Friendly Potato Player List###FriendlyPotatoDtrList")
+    public DtrClickWindow(FriendlyPotato plugin, PlayerInformation playerInformation) : base(
+        "Friendly Potato Player List###FriendlyPotatoDtrList")
     {
         Flags = ImGuiWindowFlags.NoTitleBar;
         SizeCondition = ImGuiCond.FirstUseEver;
@@ -32,16 +35,32 @@ public class DtrClickWindow : Window, IDisposable
 
     public override void Draw()
     {
-        System.Collections.Generic.List<string> typeHeaders = [];
-        if (configuration.NearbyDead)
+        if (configuration.ShowTotalsInList)
         {
-            typeHeaders.Add("Dead");
+            InlineIcon(FontAwesomeIcon.User, "Total players nearby");
+            ImGui.Text(playerInformation.Total.ToString());
+            ImGui.SameLine();
+            InlineIcon(FontAwesomeIcon.UserFriends, "Friends nearby");
+            ImGui.Text(playerInformation.Friends.ToString());
+            ImGui.SameLine();
+            InlineIcon(FontAwesomeIcon.Skull, "Dead players nearby");
+            ImGui.Text(playerInformation.Dead.ToString());
+            ImGui.SameLine();
+            InlineIcon(FontAwesomeIcon.Plane, "Players from other worlds nearby");
+            ImGui.Text(playerInformation.OffWorlders.ToString());
+            ImGui.SameLine();
+            InlineIcon(FontAwesomeIcon.SmileBeam, "Wee Ea minions nearby");
+            ImGui.Text(playerInformation.Wees.ToString());
+            ImGui.SameLine();
+            InlineIcon(FontAwesomeIcon.SkullCrossbones, "Doomed players nearby");
+            ImGui.Text(playerInformation.Doomed.ToString());
+            ImGui.Spacing();
         }
 
-        if (configuration.NearbyDoomed)
-        {
-            typeHeaders.Add("Doomed");
-        }
+        List<string> typeHeaders = [];
+        if (configuration.NearbyDead) typeHeaders.Add("Dead");
+
+        if (configuration.NearbyDoomed) typeHeaders.Add("Doomed");
 
         if (typeHeaders.Count == 0)
         {
@@ -52,77 +71,42 @@ public class DtrClickWindow : Window, IDisposable
         var cameraAimAngle = AimAngle(AimVector2());
 
         var drawnPlayers = playerInformation.Players
-                                            .Where(p => p.IsKind(PlayerCharacterKind.Dead) || p.IsKind(PlayerCharacterKind.Doomed))
+                                            .Where(p => p.IsKind(PlayerCharacterKind.Dead) ||
+                                                        p.IsKind(PlayerCharacterKind.Doomed))
                                             .ToList();
         drawnPlayers.Sort((a, b) =>
         {
             // Push targetable to the top
-            if (a.Character.IsTargetable && !b.Character.IsTargetable)
-            {
-                return -1;
-            }
+            if (a.Character.IsTargetable && !b.Character.IsTargetable) return -1;
 
-            if (!a.Character.IsTargetable && b.Character.IsTargetable)
-            {
-                return 1;
-            }
+            if (!a.Character.IsTargetable && b.Character.IsTargetable) return 1;
 
             // Push raised to the bottom
-            if (a.Raised && !b.Raised)
-            {
-                return 1;
-            }
+            if (a.Raised && !b.Raised) return 1;
 
-            if (!a.Raised && b.Raised)
-            {
-                return -1;
-            }
+            if (!a.Raised && b.Raised) return -1;
 
             // Push doomed to the bottom
-            if (a.Doomed && !b.Doomed)
-            {
-                return 1;
-            }
+            if (a.Doomed && !b.Doomed) return 1;
 
-            if (!a.Doomed && b.Doomed)
-            {
-                return -1;
-            }
+            if (!a.Doomed && b.Doomed) return -1;
 
             // Push healers to the top
             var aIsHealer = healers.Contains(a.JobAbbreviation);
             var bIsHealer = healers.Contains(b.JobAbbreviation);
-            if (aIsHealer && !bIsHealer)
-            {
-                return -1;
-            }
+            if (aIsHealer && !bIsHealer) return -1;
 
-            if (!aIsHealer && bIsHealer)
-            {
-                return 1;
-            }
+            if (!aIsHealer && bIsHealer) return 1;
 
             // Push RDMs to the top
-            if (a.JobAbbreviation == "RDM" && b.JobAbbreviation != "RDM")
-            {
-                return -1;
-            }
+            if (a.JobAbbreviation == "RDM" && b.JobAbbreviation != "RDM") return -1;
 
-            if (a.JobAbbreviation != "RDM" && b.JobAbbreviation == "RDM")
-            {
-                return 1;
-            }
+            if (a.JobAbbreviation != "RDM" && b.JobAbbreviation == "RDM") return 1;
 
             // Push SMNs to the top
-            if (a.JobAbbreviation == "SMN" && b.JobAbbreviation != "SMN")
-            {
-                return -1;
-            }
+            if (a.JobAbbreviation == "SMN" && b.JobAbbreviation != "SMN") return -1;
 
-            if (a.JobAbbreviation != "SMN" && b.JobAbbreviation == "SMN")
-            {
-                return 1;
-            }
+            if (a.JobAbbreviation != "SMN" && b.JobAbbreviation == "SMN") return 1;
 
             // Fallback alphabetical for consistent sort
             return string.Compare(a.Character.Name.ToString(), b.Character.Name.ToString(), StringComparison.Ordinal);
@@ -162,23 +146,18 @@ public class DtrClickWindow : Window, IDisposable
             var angleToTarget = AngleToTarget(player.Character, cameraAimAngle);
             var icon = DirectionArrow(angleToTarget);
 
-            var text = $"[{player.JobAbbreviation}] {player.Character.Name}  {player.Character.HomeWorld.GameData?.Name ?? "Unknown"}{raiseText}";
+            var text =
+                $"[{player.JobAbbreviation}] {player.Character.Name}  {player.Character.HomeWorld.GameData?.Name ?? "Unknown"}{raiseText}";
             ImGui.PushStyleColor(ImGuiCol.Text, color);
-            using (FriendlyPotato.PluginInterface.UiBuilder.IconFontFixedWidthHandle.Push())
-            {
-                ImGui.Text(icon.ToIconString());
-                ImGui.SameLine();
-            }
-            if (ImGui.Selectable(text, FriendlyPotato.TargetManager.Target?.GameObjectId == player.Character.GameObjectId, selectableFlags))
+            InlineIcon(icon);
+            if (ImGui.Selectable(
+                    text, FriendlyPotato.TargetManager.Target?.GameObjectId == player.Character.GameObjectId,
+                    selectableFlags))
             {
                 if (FriendlyPotato.KeyState[VirtualKey.CONTROL])
-                {
                     FriendlyPotato.TargetManager.FocusTarget = player.Character;
-                }
                 else
-                {
                     FriendlyPotato.TargetManager.Target = player.Character;
-                }
             }
 
             ImGui.PopStyleColor(1);
@@ -189,12 +168,28 @@ public class DtrClickWindow : Window, IDisposable
     {
         return angle switch
         {
-            > -45 and < 45 => FontAwesomeIcon.ArrowCircleUp,     // up arrow
-            <= -135 or >= 135 => FontAwesomeIcon.ArrowCircleDown,  // back arrow
-            <= -45 and > -135 => FontAwesomeIcon.ArrowCircleLeft,  // left arrow
-            >= 45 and < 135 => FontAwesomeIcon.ArrowCircleRight,    // right arrow
+            > -45 and < 45 => FontAwesomeIcon.ArrowCircleUp,      // up arrow
+            <= -135 or >= 135 => FontAwesomeIcon.ArrowCircleDown, // back arrow
+            <= -45 and > -135 => FontAwesomeIcon.ArrowCircleLeft, // left arrow
+            >= 45 and < 135 => FontAwesomeIcon.ArrowCircleRight,  // right arrow
             _ => FontAwesomeIcon.Question
         };
+    }
+
+    private static void InlineIcon(FontAwesomeIcon icon, string tooltip = "")
+    {
+        using (FriendlyPotato.PluginInterface.UiBuilder.IconFontFixedWidthHandle.Push())
+        {
+            ImGui.Text(icon.ToIconString());
+            ImGui.SameLine();
+        }
+
+        if (tooltip != "" && ImGui.IsItemHovered())
+        {
+            ImGui.BeginTooltip();
+            ImGui.Text(tooltip);
+            ImGui.EndTooltip();
+        }
     }
 
     private static double AngleToTarget(IPlayerCharacter character, double aimAngle)
@@ -216,12 +211,17 @@ public class DtrClickWindow : Window, IDisposable
         return angularDifference;
     }
 
-    private static double AimAngle(Vector2 aimVector) => Math.Atan2(aimVector.Y, aimVector.X) * 180f / Math.PI;
+    private static double AimAngle(Vector2 aimVector)
+    {
+        return Math.Atan2(aimVector.Y, aimVector.X) * 180f / Math.PI;
+    }
 
     private static unsafe Vector2 AimVector2()
     {
-        var camera = FFXIVClientStructs.FFXIV.Client.Graphics.Scene.CameraManager.Instance()->CurrentCamera;
-        var threeDAim = new Vector3(camera->RenderCamera->Origin.X, camera->RenderCamera->Origin.Y, camera->RenderCamera->Origin.Z) - FriendlyPotato.ClientState.LocalPlayer!.Position;
+        var camera = CameraManager.Instance()->CurrentCamera;
+        var threeDAim =
+            new Vector3(camera->RenderCamera->Origin.X, camera->RenderCamera->Origin.Y,
+                        camera->RenderCamera->Origin.Z) - FriendlyPotato.ClientState.LocalPlayer!.Position;
         return Vector2.Normalize(new Vector2(threeDAim.X, threeDAim.Z));
     }
 }
