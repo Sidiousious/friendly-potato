@@ -60,16 +60,18 @@ public sealed class FriendlyPotato : IDalamudPlugin
             HelpMessage = "Open settings for FriendlyPotato"
         });
 
-        PluginInterface.UiBuilder.Draw += DrawUI;
-        PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
-        PluginInterface.UiBuilder.OpenMainUi += ToggleConfigUI;
+        PluginInterface.UiBuilder.Draw += DrawUi;
+        PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUi;
+        PluginInterface.UiBuilder.OpenMainUi += PlayerListWindow.Toggle;
+
+        ClientState.Logout += Logout;
 
         NearbyDtrBarEntry = DtrBar.Get("FriendlyPotatoNearby");
         NearbyDtrBarEntry.OnClick += () =>
         {
             if (KeyState[VirtualKey.CONTROL])
             {
-                ToggleConfigUI();
+                ToggleConfigUi();
                 return;
             }
             PlayerListWindow.Toggle();
@@ -81,6 +83,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
     public void Dispose()
     {
         Framework.Update -= FrameworkOnUpdateEvent;
+        ClientState.Logout -= Logout;
 
         WindowSystem.RemoveAllWindows();
 
@@ -91,9 +94,17 @@ public sealed class FriendlyPotato : IDalamudPlugin
         CommandManager.RemoveHandler(CommandName);
     }
 
+    private void Logout()
+    {
+        if (PlayerListWindow.IsOpen)
+        {
+            PlayerListWindow.Toggle();
+        }
+    }
+
     private void FrameworkOnUpdateEvent(IFramework framework)
     {
-        if (!ClientState.IsLoggedIn)
+        if (!ClientState.IsLoggedIn || ClientState.LocalPlayer == null)
         {
             return;
         }
@@ -105,8 +116,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
     {
         EnsureIsOnFramework();
         playerInformation.Players = ObjectTable
-                                    .Where(player => player != ClientState.LocalPlayer && player is IPlayerCharacter)
-                                    .Cast<IPlayerCharacter>().Select(p => new PlayerCharacterDetails
+                                    .Skip(1).OfType<IPlayerCharacter>().Select(p => new PlayerCharacterDetails
                                     {
                                         Character = p
                                     }).ToImmutableList();
@@ -256,10 +266,10 @@ public sealed class FriendlyPotato : IDalamudPlugin
 
     private void OnCommand(string command, string args)
     {
-        ToggleConfigUI();
+        ToggleConfigUi();
     }
 
-    private void DrawUI() => WindowSystem.Draw();
+    private void DrawUi() => WindowSystem.Draw();
 
-    public void ToggleConfigUI() => ConfigWindow.Toggle();
+    public void ToggleConfigUi() => ConfigWindow.Toggle();
 }
