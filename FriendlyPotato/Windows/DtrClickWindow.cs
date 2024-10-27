@@ -56,6 +56,40 @@ public class DtrClickWindow : Window, IDisposable
                                             .ToList();
         drawnPlayers.Sort((a, b) =>
         {
+            // Push targetable to the top
+            if (a.Character.IsTargetable && !b.Character.IsTargetable)
+            {
+                return -1;
+            }
+
+            if (!a.Character.IsTargetable && b.Character.IsTargetable)
+            {
+                return 1;
+            }
+
+            // Push raised to the bottom
+            if (a.Raised && !b.Raised)
+            {
+                return 1;
+            }
+
+            if (!a.Raised && b.Raised)
+            {
+                return -1;
+            }
+
+            // Push doomed to the bottom
+            if (a.Doomed && !b.Doomed)
+            {
+                return 1;
+            }
+
+            if (!a.Doomed && b.Doomed)
+            {
+                return -1;
+            }
+
+            // Push healers to the top
             var aIsHealer = healers.Contains(a.JobAbbreviation);
             var bIsHealer = healers.Contains(b.JobAbbreviation);
             if (aIsHealer && !bIsHealer)
@@ -68,6 +102,7 @@ public class DtrClickWindow : Window, IDisposable
                 return 1;
             }
 
+            // Push RDMs to the top
             if (a.JobAbbreviation == "RDM" && b.JobAbbreviation != "RDM")
             {
                 return -1;
@@ -78,6 +113,7 @@ public class DtrClickWindow : Window, IDisposable
                 return 1;
             }
 
+            // Push SMNs to the top
             if (a.JobAbbreviation == "SMN" && b.JobAbbreviation != "SMN")
             {
                 return -1;
@@ -88,23 +124,13 @@ public class DtrClickWindow : Window, IDisposable
                 return 1;
             }
 
-            if (a.Character.IsTargetable && !b.Character.IsTargetable)
-            {
-                return -1;
-            }
-
-            if (!a.Character.IsTargetable && b.Character.IsTargetable)
-            {
-                return 1;
-            }
-
+            // Fallback alphabetical for consistent sort
             return string.Compare(a.Character.Name.ToString(), b.Character.Name.ToString(), StringComparison.Ordinal);
         });
 
         ImGui.Text(string.Join(" & ", typeHeaders) + " Players:");
-        for (var i = 0; i < drawnPlayers.Count; i++)
+        foreach (var player in drawnPlayers)
         {
-            var player = drawnPlayers[i];
             var color = new Vector4(1f, 1f, 1f, 1f);
             var raiseText = "";
             if (player.IsKind(PlayerCharacterKind.Dead))
