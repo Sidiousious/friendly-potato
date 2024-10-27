@@ -1,49 +1,47 @@
-﻿using Dalamud.Game.Command;
-using Dalamud.IoC;
-using Dalamud.Plugin;
-using Dalamud.Interface.Windowing;
-using Dalamud.Plugin.Services;
-using FriendlyPotato.Windows;
-using System;
-using System.Linq;
-using Dalamud.Game.Gui.Dtr;
-using Dalamud.Game.Text.SeStringHandling;
-
-using Dalamud.Game.Text.SeStringHandling.Payloads;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using Dalamud.Game.ClientState.Keys;
-using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.ClientState.Objects.Enums;
+using Dalamud.Game.ClientState.Objects.SubKinds;
+using Dalamud.Game.Command;
+using Dalamud.Game.Gui.Dtr;
+using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
+using Dalamud.Interface.Windowing;
+using Dalamud.IoC;
+using Dalamud.Plugin;
+using Dalamud.Plugin.Services;
+using FriendlyPotato.Windows;
 
 namespace FriendlyPotato;
 
+// ReSharper disable once ClassNeverInstantiated.Global - instantiated by Dalamud
 public sealed class FriendlyPotato : IDalamudPlugin
 {
-    [PluginService] internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
-    [PluginService] internal static ICommandManager CommandManager { get; private set; } = null!;
-    [PluginService] internal static IFramework Framework { get; private set; } = null!;
-    [PluginService] internal static IDtrBar DtrBar { get; private set; } = null!;
-    [PluginService] internal static IObjectTable ObjectTable { get; private set; } = null!;
-    [PluginService] internal static IClientState ClientState { get; private set; } = null!;
-    [PluginService] internal static ITargetManager TargetManager { get; private set; } = null!;
-    [PluginService] internal static IPluginLog PluginLog { get; private set; } = null!;
-    [PluginService] internal static IKeyState KeyState { get; private set; } = null!;
-
     private const string CommandName = "/friendlypotato";
+    private const string VisiblePlayers = "Visible Players: ";
+    private const string Friends = "Friends: ";
+    private const string Dead = "Dead: ";
+    private const string OffWorlders = "Off-Worlders: ";
+    private const string Wees = "Wees: ";
+    private const string Doomed = "Doomed: ";
+    private readonly Payload deadIcon = new IconPayload(BitmapFontIcon.Disconnecting);
+    private readonly Payload doomedIcon = new IconPayload(BitmapFontIcon.OrangeDiamond);
 
-    public Configuration Configuration { get; init; }
-
-    public readonly WindowSystem WindowSystem = new("FriendlyPotato");
-    public readonly Version Version = Assembly.GetExecutingAssembly().GetName().Version!;
-    private ConfigWindow ConfigWindow { get; init; }
-    private DtrClickWindow PlayerListWindow { get; init; }
-    private IDtrBarEntry NearbyDtrBarEntry { get; set; }
+    private readonly Payload dtrSeparator = new TextPayload("  ");
+    private readonly Payload friendIcon = new IconPayload(BitmapFontIcon.Returner);
+    private readonly Payload offWorldIcon = new IconPayload(BitmapFontIcon.CrossWorld);
 
     private readonly PlayerInformation playerInformation = new();
+    public readonly Version Version = Assembly.GetExecutingAssembly().GetName().Version!;
+    private readonly Payload weesIcon = new IconPayload(BitmapFontIcon.Meteor);
+
+    public readonly WindowSystem WindowSystem = new("FriendlyPotato");
 
     public FriendlyPotato()
     {
@@ -74,11 +72,44 @@ public sealed class FriendlyPotato : IDalamudPlugin
                 ToggleConfigUi();
                 return;
             }
+
             PlayerListWindow.Toggle();
         };
 
         Framework.Update += FrameworkOnUpdateEvent;
     }
+
+    [PluginService]
+    internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
+
+    [PluginService]
+    internal static ICommandManager CommandManager { get; private set; } = null!;
+
+    [PluginService]
+    internal static IFramework Framework { get; private set; } = null!;
+
+    [PluginService]
+    internal static IDtrBar DtrBar { get; private set; } = null!;
+
+    [PluginService]
+    internal static IObjectTable ObjectTable { get; private set; } = null!;
+
+    [PluginService]
+    internal static IClientState ClientState { get; private set; } = null!;
+
+    [PluginService]
+    internal static ITargetManager TargetManager { get; private set; } = null!;
+
+    [PluginService]
+    internal static IPluginLog PluginLog { get; private set; } = null!;
+
+    [PluginService]
+    internal static IKeyState KeyState { get; private set; } = null!;
+
+    public Configuration Configuration { get; init; }
+    private ConfigWindow ConfigWindow { get; init; }
+    private DtrClickWindow PlayerListWindow { get; init; }
+    private IDtrBarEntry NearbyDtrBarEntry { get; set; }
 
     public void Dispose()
     {
@@ -96,18 +127,12 @@ public sealed class FriendlyPotato : IDalamudPlugin
 
     private void Logout()
     {
-        if (PlayerListWindow.IsOpen)
-        {
-            PlayerListWindow.Toggle();
-        }
+        if (PlayerListWindow.IsOpen) PlayerListWindow.Toggle();
     }
 
     private void FrameworkOnUpdateEvent(IFramework framework)
     {
-        if (!ClientState.IsLoggedIn || ClientState.LocalPlayer == null)
-        {
-            return;
-        }
+        if (!ClientState.IsLoggedIn || ClientState.LocalPlayer == null) return;
         UpdatePlayerList();
         UpdateDtrBar();
     }
@@ -136,10 +161,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
         foreach (var player in playerInformation.Players)
         {
             var minion = player.Character.CurrentMinion;
-            if (minion?.Id == weeEaId)
-            {
-                wees++;
-            }
+            if (minion?.Id == weeEaId) wees++;
 
             if (player.Character.IsDead)
             {
@@ -180,25 +202,13 @@ public sealed class FriendlyPotato : IDalamudPlugin
                 }
             }
         }
+
         playerInformation.Friends = friends;
         playerInformation.Dead = dead;
         playerInformation.OffWorlders = offWorlders;
         playerInformation.Wees = wees;
         playerInformation.Doomed = doomed;
     }
-
-    private readonly Payload dtrSeparator = new TextPayload("  ");
-    private readonly Payload doomedIcon = new IconPayload(BitmapFontIcon.OrangeDiamond);
-    private readonly Payload weesIcon = new IconPayload(BitmapFontIcon.Meteor);
-    private readonly Payload offWorldIcon = new IconPayload(BitmapFontIcon.CrossWorld);
-    private readonly Payload deadIcon = new IconPayload(BitmapFontIcon.Disconnecting);
-    private readonly Payload friendIcon = new IconPayload(BitmapFontIcon.Returner);
-    private const string VisiblePlayers = "Visible Players: ";
-    private const string Friends = "Friends: ";
-    private const string Dead = "Dead: ";
-    private const string OffWorlders = "Off-Worlders: ";
-    private const string Wees = "Wees: ";
-    private const string Doomed = "Doomed: ";
 
     private void UpdateDtrBar()
     {
@@ -210,11 +220,13 @@ public sealed class FriendlyPotato : IDalamudPlugin
             NearbyDtrBarEntry.Shown = false;
             return;
         }
+
         NearbyDtrBarEntry.Shown = true;
         EnsureIsOnFramework();
 
         var tooltip = new StringBuilder(VisiblePlayers).Append(playerInformation.Total);
-        List<Payload> payloads = [new IconPayload(BitmapFontIcon.AnyClass), new TextPayload(playerInformation.Total.ToString())];
+        List<Payload> payloads =
+            [new IconPayload(BitmapFontIcon.AnyClass), new TextPayload(playerInformation.Total.ToString())];
         if (Configuration.NearbyFriends)
         {
             tooltip.Append(tooltipSeparator).Append(Friends).Append(playerInformation.Friends);
@@ -222,7 +234,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
             payloads.Add(friendIcon);
             payloads.Add(new TextPayload(playerInformation.Friends.ToString()));
         }
-        
+
         if (Configuration.NearbyDead)
         {
             tooltip.Append(tooltipSeparator).Append(Dead).Append(playerInformation.Dead);
@@ -230,7 +242,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
             payloads.Add(deadIcon);
             payloads.Add(new TextPayload(playerInformation.Dead.ToString()));
         }
-        
+
         if (Configuration.NearbyOffWorld)
         {
             tooltip.Append(tooltipSeparator).Append(OffWorlders).Append(playerInformation.OffWorlders);
@@ -261,7 +273,8 @@ public sealed class FriendlyPotato : IDalamudPlugin
 
     private static void EnsureIsOnFramework()
     {
-        if (!Framework.IsInFrameworkUpdateThread) throw new InvalidOperationException("This method must be called from the framework update thread.");
+        if (!Framework.IsInFrameworkUpdateThread)
+            throw new InvalidOperationException("This method must be called from the framework update thread.");
     }
 
     private void OnCommand(string command, string args)
@@ -269,7 +282,13 @@ public sealed class FriendlyPotato : IDalamudPlugin
         ToggleConfigUi();
     }
 
-    private void DrawUi() => WindowSystem.Draw();
+    private void DrawUi()
+    {
+        WindowSystem.Draw();
+    }
 
-    public void ToggleConfigUi() => ConfigWindow.Toggle();
+    public void ToggleConfigUi()
+    {
+        ConfigWindow.Toggle();
+    }
 }
