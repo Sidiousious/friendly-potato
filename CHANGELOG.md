@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.4.0"></a>
+## 1.4.0 (2024-10-28)
+
+### Features
+
+* added coloring to dead, doomed, and wee counters within the player list
+
 <a name="1.3.0"></a>
 ## 1.3.0 (2024-10-27)
 
