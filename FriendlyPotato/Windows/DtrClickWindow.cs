@@ -202,19 +202,19 @@ public class DtrClickWindow : Window, IDisposable
 
             var text =
                 $"[{player.JobAbbreviation}] {player.Character.Name}  {player.Character.HomeWorld.GameData?.Name ?? "Unknown"}{raiseText}";
-            ImGui.PushStyleColor(ImGuiCol.Text, color);
-            InlineIcon(icon);
-            if (ImGui.Selectable(
-                    text, FriendlyPotato.TargetManager.Target?.GameObjectId == player.Character.GameObjectId,
-                    selectableFlags))
+            WithTextColor(color, () =>
             {
-                if (FriendlyPotato.KeyState[VirtualKey.CONTROL])
-                    FriendlyPotato.TargetManager.FocusTarget = player.Character;
-                else
-                    FriendlyPotato.TargetManager.Target = player.Character;
-            }
-
-            ImGui.PopStyleColor(1);
+                InlineIcon(icon);
+                if (ImGui.Selectable(
+                        text, FriendlyPotato.TargetManager.Target?.GameObjectId == player.Character.GameObjectId,
+                        selectableFlags))
+                {
+                    if (FriendlyPotato.KeyState[VirtualKey.CONTROL])
+                        FriendlyPotato.TargetManager.FocusTarget = player.Character;
+                    else
+                        FriendlyPotato.TargetManager.Target = player.Character;
+                }
+            });
         }
     }
 
