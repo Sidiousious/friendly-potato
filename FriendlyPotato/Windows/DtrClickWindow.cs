@@ -13,10 +13,17 @@ namespace FriendlyPotato.Windows;
 
 public class DtrClickWindow : Window, IDisposable
 {
+    private readonly Vector4 colorBlue = new(0.6f, 0.6f, 1f, 1f);
+    private readonly Vector4 colorGreen = new(0.6f, 1f, 0.6f, 1f);
+
+    private readonly Vector4 colorRed = new(1f, 0.6f, 0.6f, 1f);
+    private readonly Vector4 colorWhite = new(1f, 1f, 1f, 1f);
     private readonly Configuration configuration;
 
     private readonly string[] healers = ["AST", "WHM", "SCH", "SGE"];
     private readonly PlayerInformation playerInformation;
+
+    private readonly Action toggleConfigUi;
 
     // We give this window a constant ID using ###
     // This allows for labels being dynamic, like "{FPS Counter}fps###XYZ counter window",
@@ -29,31 +36,77 @@ public class DtrClickWindow : Window, IDisposable
         Size = new Vector2(300f, 300f);
         this.playerInformation = playerInformation;
         configuration = plugin.Configuration;
+        toggleConfigUi = plugin.ToggleConfigUi;
     }
 
     public void Dispose() { }
 
+    private Vector4 DeadColor()
+    {
+        if (playerInformation.Dead > 0 && playerInformation.Raised != playerInformation.Dead) return colorRed;
+
+        return colorWhite;
+    }
+
+    private Vector4 DoomedColor()
+    {
+        return playerInformation.Doomed > 0 ? colorRed : colorWhite;
+    }
+
+    private Vector4 WeesColor()
+    {
+        return playerInformation.Wees >= 10 ? colorGreen : colorWhite;
+    }
+
     public override void Draw()
     {
+        InlineButtonIcon(FontAwesomeIcon.Cog, toggleConfigUi, "Open configuration");
+
         if (configuration.ShowTotalsInList)
         {
-            InlineIcon(FontAwesomeIcon.User, "Total players nearby");
-            ImGui.Text(playerInformation.Total.ToString());
-            ImGui.SameLine();
-            InlineIcon(FontAwesomeIcon.UserFriends, "Friends nearby");
-            ImGui.Text(playerInformation.Friends.ToString());
-            ImGui.SameLine();
-            InlineIcon(FontAwesomeIcon.Skull, "Dead players nearby");
-            ImGui.Text(playerInformation.Dead.ToString());
-            ImGui.SameLine();
-            InlineIcon(FontAwesomeIcon.Plane, "Players from other worlds nearby");
-            ImGui.Text(playerInformation.OffWorlders.ToString());
-            ImGui.SameLine();
-            InlineIcon(FontAwesomeIcon.SmileBeam, "Wee Ea minions nearby");
-            ImGui.Text(playerInformation.Wees.ToString());
-            ImGui.SameLine();
-            InlineIcon(FontAwesomeIcon.SkullCrossbones, "Doomed players nearby");
-            ImGui.Text(playerInformation.Doomed.ToString());
+            if (configuration.NearbyTotal)
+            {
+                InlineIcon(FontAwesomeIcon.User, "Total players nearby");
+                ImGui.Text(playerInformation.Total.ToString());
+                ImGui.SameLine();
+            }
+
+            if (configuration.NearbyFriends)
+            {
+                InlineIcon(FontAwesomeIcon.UserFriends, "Friends nearby");
+                ImGui.Text(playerInformation.Friends.ToString());
+                ImGui.SameLine();
+            }
+
+            if (configuration.NearbyOffWorld)
+            {
+                InlineIcon(FontAwesomeIcon.Plane, "Players from other worlds nearby");
+                ImGui.Text(playerInformation.OffWorlders.ToString());
+                ImGui.SameLine();
+            }
+
+            if (configuration.NearbyDead)
+            {
+                InlineIcon(FontAwesomeIcon.Skull, "Dead players nearby");
+                WithTextColor(DeadColor(), () => ImGui.Text(playerInformation.Dead.ToString()));
+                ImGui.SameLine();
+            }
+
+            if (configuration.NearbyDoomed)
+            {
+                InlineIcon(FontAwesomeIcon.SkullCrossbones, "Doomed players nearby");
+                WithTextColor(DoomedColor(), () => ImGui.Text(playerInformation.Doomed.ToString()));
+                ImGui.SameLine();
+            }
+
+            if (configuration.ShowWees)
+            {
+                InlineIcon(FontAwesomeIcon.SmileBeam, "Wee Ea minions nearby");
+                WithTextColor(WeesColor(), () => ImGui.Text(playerInformation.Wees.ToString()));
+                ImGui.SameLine();
+            }
+
+            ImGui.NewLine();
             ImGui.Spacing();
         }
 
@@ -67,6 +120,8 @@ public class DtrClickWindow : Window, IDisposable
             ImGui.TextWrapped("This window lists dead/doomed players, when those settings are enabled.");
             return;
         }
+
+        ImGui.Text(string.Join(" & ", typeHeaders) + " Players:");
 
         var cameraAimAngle = AimAngle(AimVector2());
 
@@ -112,7 +167,6 @@ public class DtrClickWindow : Window, IDisposable
             return string.Compare(a.Character.Name.ToString(), b.Character.Name.ToString(), StringComparison.Ordinal);
         });
 
-        ImGui.Text(string.Join(" & ", typeHeaders) + " Players:");
         foreach (var player in drawnPlayers)
         {
             var color = new Vector4(1f, 1f, 1f, 1f);
@@ -189,6 +243,34 @@ public class DtrClickWindow : Window, IDisposable
             ImGui.BeginTooltip();
             ImGui.Text(tooltip);
             ImGui.EndTooltip();
+        }
+    }
+
+    private static void InlineButtonIcon(FontAwesomeIcon icon, Action action, string tooltip = "")
+    {
+        using (FriendlyPotato.PluginInterface.UiBuilder.IconFontFixedWidthHandle.Push())
+        {
+            if (ImGui.Button(icon.ToIconString())) action();
+            ImGui.SameLine();
+        }
+
+        if (tooltip != "" && ImGui.IsItemHovered())
+        {
+            ImGui.BeginTooltip();
+            ImGui.Text(tooltip);
+            ImGui.EndTooltip();
+        }
+    }
+
+    private static void WithTextColor(Vector4 color, Action action)
+    {
+        ImGui.PushStyleColor(ImGuiCol.Text, color);
+        try
+        {
+            action();
+        } finally
+        {
+            ImGui.PopStyleColor(1);
         }
     }
 

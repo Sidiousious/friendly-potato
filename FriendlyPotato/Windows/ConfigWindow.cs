@@ -12,7 +12,8 @@ public class ConfigWindow : Window, IDisposable
     // We give this window a constant ID using ###
     // This allows for labels being dynamic, like "{FPS Counter}fps###XYZ counter window",
     // and the window ID will always be "###XYZ counter window" for ImGui
-    public ConfigWindow(FriendlyPotato plugin) : base($"Friendly Potato ({plugin.Version.ToString()}) Configuration###FriendlyPotatoConfig")
+    public ConfigWindow(FriendlyPotato plugin) : base(
+        $"Friendly Potato ({plugin.Version.ToString()}) Configuration###FriendlyPotatoConfig")
     {
         Size = new Vector2(300, 360);
         SizeCondition = ImGuiCond.Always;
@@ -53,6 +54,13 @@ public class ConfigWindow : Window, IDisposable
                 configuration.Save();
             }
 
+            var nearbyTotal = configuration.NearbyTotal;
+            if (ImGui.Checkbox("Show total nearby players", ref nearbyTotal))
+            {
+                configuration.NearbyTotal = nearbyTotal;
+                configuration.Save();
+            }
+
             var nearbyDead = configuration.NearbyDead;
             if (ImGui.Checkbox("Show nearby dead players", ref nearbyDead))
             {
@@ -78,6 +86,13 @@ public class ConfigWindow : Window, IDisposable
             if (ImGui.Checkbox("Show nearby Wee Eas", ref nearbyWees))
             {
                 configuration.NearbyWees = nearbyWees;
+                configuration.Save();
+            }
+
+            var weesUtOnly = configuration.WeesInUtOnly;
+            if (ImGui.Checkbox("Limit Wee Ea shown to UT only", ref weesUtOnly))
+            {
+                configuration.WeesInUtOnly = weesUtOnly;
                 configuration.Save();
             }
 

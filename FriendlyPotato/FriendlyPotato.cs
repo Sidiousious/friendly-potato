@@ -32,10 +32,10 @@ public sealed class FriendlyPotato : IDalamudPlugin
     private const string Doomed = "Doomed: ";
     private readonly Payload deadIcon = new IconPayload(BitmapFontIcon.Disconnecting);
     private readonly Payload doomedIcon = new IconPayload(BitmapFontIcon.OrangeDiamond);
-
     private readonly Payload dtrSeparator = new TextPayload("  ");
     private readonly Payload friendIcon = new IconPayload(BitmapFontIcon.Returner);
     private readonly Payload offWorldIcon = new IconPayload(BitmapFontIcon.CrossWorld);
+    private readonly Payload playerIcon = new IconPayload(BitmapFontIcon.AnyClass);
 
     private readonly PlayerInformation playerInformation = new();
     public readonly Version Version = Assembly.GetExecutingAssembly().GetName().Version!;
@@ -155,8 +155,10 @@ public sealed class FriendlyPotato : IDalamudPlugin
         var friends = 0;
         var dead = 0;
         var offWorlders = 0;
-        var wees = 0;
+        // Local player is not included in Players list, so include own wee here
+        var wees = ClientState.LocalPlayer!.CurrentMinion?.Id == weeEaId ? 1 : 0;
         var doomed = 0;
+        var raised = 0;
 
         foreach (var player in playerInformation.Players)
         {
@@ -193,6 +195,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
                 {
                     case 148 or 1140:
                         player.Raised = true;
+                        raised++;
                         break;
                     case 1970:
                         player.Doomed = true;
@@ -208,6 +211,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
         playerInformation.OffWorlders = offWorlders;
         playerInformation.Wees = wees;
         playerInformation.Doomed = doomed;
+        playerInformation.Raised = raised;
     }
 
     private void UpdateDtrBar()
@@ -224,23 +228,22 @@ public sealed class FriendlyPotato : IDalamudPlugin
         NearbyDtrBarEntry.Shown = true;
         EnsureIsOnFramework();
 
-        var tooltip = new StringBuilder(VisiblePlayers).Append(playerInformation.Total);
-        List<Payload> payloads =
-            [new IconPayload(BitmapFontIcon.AnyClass), new TextPayload(playerInformation.Total.ToString())];
+        var tooltip = new StringBuilder("");
+        List<Payload> payloads = [];
+        if (Configuration.NearbyTotal)
+        {
+            tooltip.Append(tooltipSeparator).Append(VisiblePlayers).Append(playerInformation.Total);
+            payloads.Add(dtrSeparator);
+            payloads.Add(playerIcon);
+            payloads.Add(new TextPayload(playerInformation.Total.ToString()));
+        }
+
         if (Configuration.NearbyFriends)
         {
             tooltip.Append(tooltipSeparator).Append(Friends).Append(playerInformation.Friends);
             payloads.Add(dtrSeparator);
             payloads.Add(friendIcon);
             payloads.Add(new TextPayload(playerInformation.Friends.ToString()));
-        }
-
-        if (Configuration.NearbyDead)
-        {
-            tooltip.Append(tooltipSeparator).Append(Dead).Append(playerInformation.Dead);
-            payloads.Add(dtrSeparator);
-            payloads.Add(deadIcon);
-            payloads.Add(new TextPayload(playerInformation.Dead.ToString()));
         }
 
         if (Configuration.NearbyOffWorld)
@@ -251,12 +254,12 @@ public sealed class FriendlyPotato : IDalamudPlugin
             payloads.Add(new TextPayload(playerInformation.OffWorlders.ToString()));
         }
 
-        if (Configuration.NearbyWees)
+        if (Configuration.NearbyDead)
         {
-            tooltip.Append(tooltipSeparator).Append(Wees).Append(playerInformation.Wees);
+            tooltip.Append(tooltipSeparator).Append(Dead).Append(playerInformation.Dead);
             payloads.Add(dtrSeparator);
-            payloads.Add(weesIcon);
-            payloads.Add(new TextPayload(playerInformation.Wees.ToString()));
+            payloads.Add(deadIcon);
+            payloads.Add(new TextPayload(playerInformation.Dead.ToString()));
         }
 
         if (Configuration.NearbyDoomed)
@@ -267,8 +270,16 @@ public sealed class FriendlyPotato : IDalamudPlugin
             payloads.Add(new TextPayload(playerInformation.Doomed.ToString()));
         }
 
-        NearbyDtrBarEntry.Text = new SeString(payloads);
-        NearbyDtrBarEntry.Tooltip = new SeString(new TextPayload(tooltip.ToString()));
+        if (Configuration.ShowWees)
+        {
+            tooltip.Append(tooltipSeparator).Append(Wees).Append(playerInformation.Wees);
+            payloads.Add(dtrSeparator);
+            payloads.Add(weesIcon);
+            payloads.Add(new TextPayload(playerInformation.Wees.ToString()));
+        }
+
+        NearbyDtrBarEntry.Text = new SeString(payloads.Skip(1).ToList());
+        NearbyDtrBarEntry.Tooltip = new SeString(new TextPayload(tooltip.ToString().Trim()));
     }
 
     private static void EnsureIsOnFramework()
@@ -279,7 +290,8 @@ public sealed class FriendlyPotato : IDalamudPlugin
 
     private void OnCommand(string command, string args)
     {
-        ToggleConfigUi();
+        PlayerListWindow.Toggle();
+        PluginLog.Debug($"Player currently in {ClientState.MapId}");
     }
 
     private void DrawUi()
