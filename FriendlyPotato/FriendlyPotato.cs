@@ -291,7 +291,6 @@ public sealed class FriendlyPotato : IDalamudPlugin
     private void OnCommand(string command, string args)
     {
         PlayerListWindow.Toggle();
-        PluginLog.Debug($"Player currently in {ClientState.MapId}");
     }
 
     private void DrawUi()
