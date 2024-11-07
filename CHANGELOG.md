@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.5.0"></a>
+## 1.5.0 (2024-11-07)
+
+### Features
+
+* separate list and dtr display settings
+
 <a name="1.4.0"></a>
 ## 1.4.0 (2024-10-28)
 
