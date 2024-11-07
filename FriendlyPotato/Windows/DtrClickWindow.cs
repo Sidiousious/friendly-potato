@@ -62,44 +62,44 @@ public class DtrClickWindow : Window, IDisposable
     {
         InlineButtonIcon(FontAwesomeIcon.Cog, toggleConfigUi, "Open configuration");
 
-        if (configuration.ShowTotalsInList)
+        if (configuration.ListCountsEnabled)
         {
-            if (configuration.NearbyTotal)
+            if (configuration.ListTotalEnabled)
             {
                 InlineIcon(FontAwesomeIcon.User, "Total players nearby");
                 ImGui.Text(playerInformation.Total.ToString());
                 ImGui.SameLine();
             }
 
-            if (configuration.NearbyFriends)
+            if (configuration.ListFriendsEnabled)
             {
                 InlineIcon(FontAwesomeIcon.UserFriends, "Friends nearby");
                 ImGui.Text(playerInformation.Friends.ToString());
                 ImGui.SameLine();
             }
 
-            if (configuration.NearbyOffWorld)
+            if (configuration.ListOffWorldEnabled)
             {
                 InlineIcon(FontAwesomeIcon.Plane, "Players from other worlds nearby");
                 ImGui.Text(playerInformation.OffWorlders.ToString());
                 ImGui.SameLine();
             }
 
-            if (configuration.NearbyDead)
+            if (configuration.ListDeadEnabled)
             {
                 InlineIcon(FontAwesomeIcon.Skull, "Dead players nearby");
                 WithTextColor(DeadColor(), () => ImGui.Text(playerInformation.Dead.ToString()));
                 ImGui.SameLine();
             }
 
-            if (configuration.NearbyDoomed)
+            if (configuration.ListDoomEnabled)
             {
                 InlineIcon(FontAwesomeIcon.SkullCrossbones, "Doomed players nearby");
                 WithTextColor(DoomedColor(), () => ImGui.Text(playerInformation.Doomed.ToString()));
                 ImGui.SameLine();
             }
 
-            if (configuration.ShowWees)
+            if (configuration.ListShowWees)
             {
                 InlineIcon(FontAwesomeIcon.SmileBeam, "Wee Ea minions nearby");
                 WithTextColor(WeesColor(), () => ImGui.Text(playerInformation.Wees.ToString()));
@@ -111,9 +111,9 @@ public class DtrClickWindow : Window, IDisposable
         }
 
         List<string> typeHeaders = [];
-        if (configuration.NearbyDead) typeHeaders.Add("Dead");
+        if (configuration.ListDeadEnabled) typeHeaders.Add("Dead");
 
-        if (configuration.NearbyDoomed) typeHeaders.Add("Doomed");
+        if (configuration.ListDoomEnabled) typeHeaders.Add("Doomed");
 
         if (typeHeaders.Count == 0)
         {
@@ -126,8 +126,14 @@ public class DtrClickWindow : Window, IDisposable
         var cameraAimAngle = AimAngle(AimVector2());
 
         var drawnPlayers = playerInformation.Players
-                                            .Where(p => p.IsKind(PlayerCharacterKind.Dead) ||
-                                                        p.IsKind(PlayerCharacterKind.Doomed))
+                                            .Where(p =>
+                                            {
+#if DEBUG
+                                                if (configuration.DebugList) return true;
+#endif
+                                                return p.IsKind(PlayerCharacterKind.Dead) ||
+                                                       p.IsKind(PlayerCharacterKind.Doomed);
+                                            })
                                             .ToList();
         drawnPlayers.Sort((a, b) =>
         {
@@ -192,13 +198,23 @@ public class DtrClickWindow : Window, IDisposable
             var selectableFlags = ImGuiSelectableFlags.None;
             if (!player.Character.IsTargetable)
             {
-                color.W *= 0.8f;
+                color.W *= 0.5f;
                 raiseText += " (untargetable)";
                 selectableFlags = ImGuiSelectableFlags.Disabled;
             }
 
             var angleToTarget = AngleToTarget(player.Character, cameraAimAngle);
             var icon = DirectionArrow(angleToTarget);
+            var distance = Vector2.Distance(
+                new Vector2(FriendlyPotato.ClientState.LocalPlayer!.Position.X,
+                            FriendlyPotato.ClientState.LocalPlayer!.Position.Z),
+                new Vector2(player.Character.Position.X, player.Character.Position.Z));
+
+            if (distance > 31.0)
+            {
+                color.W *= 0.7f;
+                raiseText += " (FAR)";
+            }
 
             var text =
                 $"[{player.JobAbbreviation}] {player.Character.Name}  {player.Character.HomeWorld.GameData?.Name ?? "Unknown"}{raiseText}";
@@ -214,6 +230,13 @@ public class DtrClickWindow : Window, IDisposable
                     else
                         FriendlyPotato.TargetManager.Target = player.Character;
                 }
+#if DEBUG
+                if (configuration.DebugList)
+                {
+                    ImGui.SameLine();
+                    ImGui.Text($" ({distance:F1}u)");
+                }
+#endif
             });
         }
     }

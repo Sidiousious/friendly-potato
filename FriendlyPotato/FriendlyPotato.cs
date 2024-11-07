@@ -141,10 +141,12 @@ public sealed class FriendlyPotato : IDalamudPlugin
     {
         EnsureIsOnFramework();
         playerInformation.Players = ObjectTable
-                                    .Skip(1).OfType<IPlayerCharacter>().Select(p => new PlayerCharacterDetails
-                                    {
-                                        Character = p
-                                    }).ToImmutableList();
+                                    .Skip(1).OfType<IPlayerCharacter>()
+                                    .Where(p => !string.IsNullOrEmpty(p.Name.ToString())).Select(
+                                        p => new PlayerCharacterDetails
+                                        {
+                                            Character = p
+                                        }).ToImmutableList();
         UpdatePlayerTypes();
     }
 
@@ -219,7 +221,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
         // const string dtrSeparator = "  ";
         const char tooltipSeparator = '\n';
 
-        if (!Configuration.NearbyEnabled)
+        if (!Configuration.DtrEnabled)
         {
             NearbyDtrBarEntry.Shown = false;
             return;
@@ -230,7 +232,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
 
         var tooltip = new StringBuilder("");
         List<Payload> payloads = [];
-        if (Configuration.NearbyTotal)
+        if (Configuration.DtrTotalEnabled)
         {
             tooltip.Append(tooltipSeparator).Append(VisiblePlayers).Append(playerInformation.Total);
             payloads.Add(dtrSeparator);
@@ -238,7 +240,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
             payloads.Add(new TextPayload(playerInformation.Total.ToString()));
         }
 
-        if (Configuration.NearbyFriends)
+        if (Configuration.DtrFriendsEnabled)
         {
             tooltip.Append(tooltipSeparator).Append(Friends).Append(playerInformation.Friends);
             payloads.Add(dtrSeparator);
@@ -246,7 +248,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
             payloads.Add(new TextPayload(playerInformation.Friends.ToString()));
         }
 
-        if (Configuration.NearbyOffWorld)
+        if (Configuration.DtrOffWorldEnabled)
         {
             tooltip.Append(tooltipSeparator).Append(OffWorlders).Append(playerInformation.OffWorlders);
             payloads.Add(dtrSeparator);
@@ -254,7 +256,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
             payloads.Add(new TextPayload(playerInformation.OffWorlders.ToString()));
         }
 
-        if (Configuration.NearbyDead)
+        if (Configuration.DtrDeadEnabled)
         {
             tooltip.Append(tooltipSeparator).Append(Dead).Append(playerInformation.Dead);
             payloads.Add(dtrSeparator);
@@ -262,7 +264,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
             payloads.Add(new TextPayload(playerInformation.Dead.ToString()));
         }
 
-        if (Configuration.NearbyDoomed)
+        if (Configuration.DtrDoomEnabled)
         {
             tooltip.Append(tooltipSeparator).Append(Doomed).Append(playerInformation.Doomed);
             payloads.Add(dtrSeparator);
@@ -270,7 +272,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
             payloads.Add(new TextPayload(playerInformation.Doomed.ToString()));
         }
 
-        if (Configuration.ShowWees)
+        if (Configuration.DtrShowWees)
         {
             tooltip.Append(tooltipSeparator).Append(Wees).Append(playerInformation.Wees);
             payloads.Add(dtrSeparator);

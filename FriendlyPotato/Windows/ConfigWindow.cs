@@ -30,62 +30,22 @@ public class ConfigWindow : Window, IDisposable
 
     public override void Draw()
     {
-        if (ImGui.CollapsingHeader("Player List Settings", ImGuiTreeNodeFlags.DefaultOpen))
+        if (ImGui.CollapsingHeader("General Settings", ImGuiTreeNodeFlags.DefaultOpen))
         {
             ImGui.Spacing();
-            var showTotalsInList = configuration.ShowTotalsInList;
-            if (ImGui.Checkbox("Show totals in player list", ref showTotalsInList))
+
+            var showTotalsInList = configuration.ListCountsEnabled;
+            if (ImGui.Checkbox("Show counters in player list", ref showTotalsInList))
             {
-                configuration.ShowTotalsInList = showTotalsInList;
+                configuration.ListCountsEnabled = showTotalsInList;
                 configuration.Save();
             }
 
-            ImGui.Spacing();
-        }
-
-        if (ImGui.CollapsingHeader("Server Status Bar (DTR) Settings", ImGuiTreeNodeFlags.DefaultOpen))
-        {
-            ImGui.Spacing();
-            var nearbyEnabled = configuration.NearbyEnabled;
-            if (ImGui.Checkbox("Show nearby player information", ref nearbyEnabled))
+            var nearbyEnabled = configuration.DtrEnabled;
+            if (ImGui.Checkbox("Show counters in status bar", ref nearbyEnabled))
             {
-                configuration.NearbyEnabled = nearbyEnabled;
+                configuration.DtrEnabled = nearbyEnabled;
                 // can save immediately on change, if you don't want to provide a "Save and Close" button
-                configuration.Save();
-            }
-
-            var nearbyTotal = configuration.NearbyTotal;
-            if (ImGui.Checkbox("Show total nearby players", ref nearbyTotal))
-            {
-                configuration.NearbyTotal = nearbyTotal;
-                configuration.Save();
-            }
-
-            var nearbyDead = configuration.NearbyDead;
-            if (ImGui.Checkbox("Show nearby dead players", ref nearbyDead))
-            {
-                configuration.NearbyDead = nearbyDead;
-                configuration.Save();
-            }
-
-            var nearbyOffWorld = configuration.NearbyOffWorld;
-            if (ImGui.Checkbox("Show nearby off-world players", ref nearbyOffWorld))
-            {
-                configuration.NearbyOffWorld = nearbyOffWorld;
-                configuration.Save();
-            }
-
-            var nearbyFriends = configuration.NearbyFriends;
-            if (ImGui.Checkbox("Show nearby friends", ref nearbyFriends))
-            {
-                configuration.NearbyFriends = nearbyFriends;
-                configuration.Save();
-            }
-
-            var nearbyWees = configuration.NearbyWees;
-            if (ImGui.Checkbox("Show nearby Wee Eas", ref nearbyWees))
-            {
-                configuration.NearbyWees = nearbyWees;
                 configuration.Save();
             }
 
@@ -96,10 +56,101 @@ public class ConfigWindow : Window, IDisposable
                 configuration.Save();
             }
 
-            var nearbyDooms = configuration.NearbyDoomed;
+            ImGui.Spacing();
+        }
+
+        if (ImGui.CollapsingHeader("Player List Settings"))
+        {
+            ImGui.Spacing();
+
+            var nearbyTotal = configuration.ListTotalEnabled;
+            if (ImGui.Checkbox("Show total nearby players", ref nearbyTotal))
+            {
+                configuration.ListTotalEnabled = nearbyTotal;
+                configuration.Save();
+            }
+
+            var nearbyDead = configuration.ListDeadEnabled;
+            if (ImGui.Checkbox("Show nearby dead players", ref nearbyDead))
+            {
+                configuration.ListDeadEnabled = nearbyDead;
+                configuration.Save();
+            }
+
+            var nearbyOffWorld = configuration.ListOffWorldEnabled;
+            if (ImGui.Checkbox("Show nearby off-world players", ref nearbyOffWorld))
+            {
+                configuration.ListOffWorldEnabled = nearbyOffWorld;
+                configuration.Save();
+            }
+
+            var nearbyFriends = configuration.ListFriendsEnabled;
+            if (ImGui.Checkbox("Show nearby friends", ref nearbyFriends))
+            {
+                configuration.ListFriendsEnabled = nearbyFriends;
+                configuration.Save();
+            }
+
+            var nearbyWees = configuration.ListWeesEnabled;
+            if (ImGui.Checkbox("Show nearby Wee Eas", ref nearbyWees))
+            {
+                configuration.ListWeesEnabled = nearbyWees;
+                configuration.Save();
+            }
+
+            var nearbyDooms = configuration.ListDoomEnabled;
             if (ImGui.Checkbox("Show players hit with Doom", ref nearbyDooms))
             {
-                configuration.NearbyDoomed = nearbyDooms;
+                configuration.ListDoomEnabled = nearbyDooms;
+                configuration.Save();
+            }
+
+            ImGui.Spacing();
+        }
+
+        if (ImGui.CollapsingHeader("Server Status Bar (DTR) Settings"))
+        {
+            ImGui.Spacing();
+
+            var nearbyTotal = configuration.DtrTotalEnabled;
+            if (ImGui.Checkbox("Show total nearby players", ref nearbyTotal))
+            {
+                configuration.DtrTotalEnabled = nearbyTotal;
+                configuration.Save();
+            }
+
+            var nearbyDead = configuration.DtrDeadEnabled;
+            if (ImGui.Checkbox("Show nearby dead players", ref nearbyDead))
+            {
+                configuration.DtrDeadEnabled = nearbyDead;
+                configuration.Save();
+            }
+
+            var nearbyOffWorld = configuration.DtrOffWorldEnabled;
+            if (ImGui.Checkbox("Show nearby off-world players", ref nearbyOffWorld))
+            {
+                configuration.DtrOffWorldEnabled = nearbyOffWorld;
+                configuration.Save();
+            }
+
+            var nearbyFriends = configuration.DtrFriendsEnabled;
+            if (ImGui.Checkbox("Show nearby friends", ref nearbyFriends))
+            {
+                configuration.DtrFriendsEnabled = nearbyFriends;
+                configuration.Save();
+            }
+
+            var nearbyWees = configuration.DtrWeesEnabled;
+            if (ImGui.Checkbox("Show nearby Wee Eas", ref nearbyWees))
+            {
+                configuration.DtrWeesEnabled = nearbyWees;
+                configuration.Save();
+            }
+
+            var nearbyDooms = configuration.DtrDoomEnabled;
+            if (ImGui.Checkbox("Show players hit with Doom", ref nearbyDooms))
+            {
+                configuration.DtrDoomEnabled = nearbyDooms;
                 configuration.Save();
             }
 
@@ -108,6 +159,15 @@ public class ConfigWindow : Window, IDisposable
 
         if (ImGui.CollapsingHeader("Debug Settings"))
         {
+#if DEBUG
+            ImGui.Spacing();
+            var debugList = configuration.DebugList;
+            if (ImGui.Checkbox("Show debug list", ref debugList))
+            {
+                configuration.DebugList = debugList;
+                configuration.Save();
+            }
+#endif
             ImGui.Spacing();
             var debugStatuses = configuration.DebugStatuses;
             if (ImGui.Checkbox("Log debug statuses", ref debugStatuses))
