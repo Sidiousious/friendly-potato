@@ -48,7 +48,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
 
         ConfigWindow = new ConfigWindow(this);
-        PlayerListWindow = new DtrClickWindow(this, playerInformation);
+        PlayerListWindow = new PlayerListWindow(this, playerInformation);
 
         WindowSystem.AddWindow(ConfigWindow);
         WindowSystem.AddWindow(PlayerListWindow);
@@ -108,7 +108,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
 
     public Configuration Configuration { get; init; }
     private ConfigWindow ConfigWindow { get; init; }
-    private DtrClickWindow PlayerListWindow { get; init; }
+    private PlayerListWindow PlayerListWindow { get; init; }
     private IDtrBarEntry NearbyDtrBarEntry { get; set; }
 
     public void Dispose()

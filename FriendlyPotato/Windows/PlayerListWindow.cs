@@ -11,7 +11,7 @@ using ImGuiNET;
 
 namespace FriendlyPotato.Windows;
 
-public class DtrClickWindow : Window, IDisposable
+public class PlayerListWindow : Window, IDisposable
 {
     private readonly Vector4 colorBlue = new(0.6f, 0.6f, 1f, 1f);
     private readonly Vector4 colorGreen = new(0.6f, 1f, 0.6f, 1f);
@@ -28,7 +28,7 @@ public class DtrClickWindow : Window, IDisposable
     // We give this window a constant ID using ###
     // This allows for labels being dynamic, like "{FPS Counter}fps###XYZ counter window",
     // and the window ID will always be "###XYZ counter window" for ImGui
-    public DtrClickWindow(FriendlyPotato plugin, PlayerInformation playerInformation) : base(
+    public PlayerListWindow(FriendlyPotato plugin, PlayerInformation playerInformation) : base(
         "Friendly Potato Player List###FriendlyPotatoDtrList")
     {
         Flags = ImGuiWindowFlags.NoTitleBar;
