@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.5.1"></a>
+## 1.5.1 (2024-11-08)
+
+### Bug Fixes
+
+* assembly version in release builds
+
 <a name="1.5.0"></a>
 ## 1.5.0 (2024-11-07)
 
