@@ -6,6 +6,9 @@ set -u
 dotnet build FriendlyPotato/FriendlyPotato.csproj -c Release --output ./out
 
 versionize
+
+# Build again to get correct version number in assembly
+dotnet build FriendlyPotato/FriendlyPotato.csproj -c Release --output ./out
 git push --follow-tags
 
 VERSION=$(versionize inspect)
