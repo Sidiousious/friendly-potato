@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.5.2"></a>
+## 1.5.2 (2024-11-14)
+
+### Bug Fixes
+
+* use api11, known issues: everyone counts offworld, everyone is unknown world, doom/raised not tracked, job abbreviations do not work
+
 <a name="1.5.1"></a>
 ## 1.5.1 (2024-11-08)
 
