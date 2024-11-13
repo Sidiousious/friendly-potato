@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.5.3"></a>
+## 1.5.3 (2024-11-14)
+
+### Bug Fixes
+
+* api version in repository
+
 <a name="1.5.2"></a>
 ## 1.5.2 (2024-11-14)
 
