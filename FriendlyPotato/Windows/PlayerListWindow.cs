@@ -216,8 +216,9 @@ public class PlayerListWindow : Window, IDisposable
                 raiseText += " (FAR)";
             }
 
+            // TODO: add job abbreviation back
             var text =
-                $"[{player.JobAbbreviation}] {player.Character.Name}  {player.Character.HomeWorld.GameData?.Name ?? "Unknown"}{raiseText}";
+                $"[] {player.Character.Name}  {player.Character.HomeWorld.ValueNullable?.Name.ToString() ?? "Unknown"}{raiseText}";
             WithTextColor(color, () =>
             {
                 InlineIcon(icon);
@@ -323,10 +324,18 @@ public class PlayerListWindow : Window, IDisposable
 
     private static unsafe Vector2 AimVector2()
     {
-        var camera = CameraManager.Instance()->CurrentCamera;
-        var threeDAim =
-            new Vector3(camera->RenderCamera->Origin.X, camera->RenderCamera->Origin.Y,
-                        camera->RenderCamera->Origin.Z) - FriendlyPotato.ClientState.LocalPlayer!.Position;
-        return Vector2.Normalize(new Vector2(threeDAim.X, threeDAim.Z));
+        try
+        {
+            var camera = CameraManager.Instance()->CurrentCamera;
+            var threeDAim =
+                new Vector3(camera->RenderCamera->Origin.X, camera->RenderCamera->Origin.Y,
+                            camera->RenderCamera->Origin.Z) - FriendlyPotato.ClientState.LocalPlayer!.Position;
+            return Vector2.Normalize(new Vector2(threeDAim.X, threeDAim.Z));
+        }
+        catch (NullReferenceException)
+        {
+            // Camera does not exist during loading screens
+            return Vector2.Zero;
+        }
     }
 }

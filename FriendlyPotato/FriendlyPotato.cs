@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -8,6 +9,7 @@ using Dalamud.Game.ClientState.Keys;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.ClientState.Objects.SubKinds;
+using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui.Dtr;
 using Dalamud.Game.Text.SeStringHandling;
@@ -20,10 +22,18 @@ using FriendlyPotato.Windows;
 
 namespace FriendlyPotato;
 
+/**
+ * TODO 7.1
+ * - status list is broken and always empty
+ * - classjob is broken and always adventurer
+ * - homeworld is broken and always 0
+ */
+
 // ReSharper disable once ClassNeverInstantiated.Global - instantiated by Dalamud
 public sealed class FriendlyPotato : IDalamudPlugin
 {
     private const string CommandName = "/friendlypotato";
+    private const string DebugCommandName = "/fpotdbg";
     private const string VisiblePlayers = "Visible Players: ";
     private const string Friends = "Friends: ";
     private const string Dead = "Dead: ";
@@ -56,6 +66,11 @@ public sealed class FriendlyPotato : IDalamudPlugin
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {
             HelpMessage = "Open settings for FriendlyPotato"
+        });
+
+        CommandManager.AddHandler(DebugCommandName, new CommandInfo(OnDebugCommand)
+        {
+            HelpMessage = "Print some info in debug log"
         });
 
         PluginInterface.UiBuilder.Draw += DrawUi;
@@ -123,9 +138,10 @@ public sealed class FriendlyPotato : IDalamudPlugin
         PlayerListWindow.Dispose();
 
         CommandManager.RemoveHandler(CommandName);
+        CommandManager.RemoveHandler(DebugCommandName);
     }
 
-    private void Logout()
+    private void Logout(int _, int __)
     {
         if (PlayerListWindow.IsOpen) PlayerListWindow.Toggle();
     }
@@ -150,6 +166,44 @@ public sealed class FriendlyPotato : IDalamudPlugin
         UpdatePlayerTypes();
     }
 
+    private static void LogAllPropertiesBeginningWithUnknown<T>(T obj)
+    {
+        if (obj == null)
+        {
+            PluginLog.Debug("obj is null");
+            return;
+        }
+
+        try
+        {
+            var type = obj.GetType();
+            var props = type.GetProperties();
+            foreach (var prop in props)
+                PluginLog.Debug($"'{prop.Name}' of type {prop.PropertyType.Name}: {GetValueOrDefault(obj, prop)}");
+        }
+        catch (Exception ex)
+        {
+            PluginLog.Error(ex.ToString());
+        }
+    }
+
+    private static object? GetValueOrDefault<T>([DisallowNull] T obj1, PropertyInfo prop)
+    {
+        try
+        {
+            return prop.GetValue(obj1);
+        }
+        catch (TargetInvocationException)
+        {
+            return "[NO VALUE]";
+        }
+        catch (Exception ex)
+        {
+            PluginLog.Error(ex.ToString());
+            return "[ERR]";
+        }
+    }
+
     private void UpdatePlayerTypes()
     {
         const uint weeEaId = 423;
@@ -158,14 +212,16 @@ public sealed class FriendlyPotato : IDalamudPlugin
         var dead = 0;
         var offWorlders = 0;
         // Local player is not included in Players list, so include own wee here
-        var wees = ClientState.LocalPlayer!.CurrentMinion?.Id == weeEaId ? 1 : 0;
+        // TODO: fix RowId to correct property
+        var wees = ClientState.LocalPlayer!.CurrentMinion?.ValueNullable?.RowId == weeEaId ? 1 : 0;
         var doomed = 0;
         var raised = 0;
 
         foreach (var player in playerInformation.Players)
         {
             var minion = player.Character.CurrentMinion;
-            if (minion?.Id == weeEaId) wees++;
+            // TODO: fix RowId to correct property
+            if (minion?.RowId == weeEaId) wees++;
 
             if (player.Character.IsDead)
             {
@@ -173,7 +229,8 @@ public sealed class FriendlyPotato : IDalamudPlugin
                 dead++;
             }
 
-            if (player.Character.HomeWorld.Id != ClientState.LocalPlayer!.CurrentWorld.Id)
+            // TODO: fix RowId to correct property
+            if (player.Character.HomeWorld.RowId != ClientState.LocalPlayer!.CurrentWorld.RowId)
             {
                 player.AddKind(PlayerCharacterKind.OffWorlder);
                 offWorlders++;
@@ -185,6 +242,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
                 friends++;
             }
 
+            // TODO: verify StatusList still works and statusIds have not changed
             foreach (var status in player.Character.StatusList)
             {
                 if (Configuration.DebugStatuses && status.RemainingTime > 0)
@@ -293,6 +351,18 @@ public sealed class FriendlyPotato : IDalamudPlugin
     private void OnCommand(string command, string args)
     {
         PlayerListWindow.Toggle();
+    }
+
+    private void OnDebugCommand(string command, string args)
+    {
+        PluginLog.Debug("Current World");
+        LogAllPropertiesBeginningWithUnknown(ClientState.LocalPlayer!.CurrentWorld.Value);
+        var target = ClientState.LocalPlayer!.TargetObject;
+        if (target == null) return;
+        var targetCharacter = (IBattleChara)target;
+        PluginLog.Debug($"Statuses {targetCharacter.StatusList.Length}");
+        PluginLog.Debug(
+            $"{string.Join(", ", targetCharacter.StatusList.Select(x => $"{x.StatusId} remaining {x.RemainingTime}"))}");
     }
 
     private void DrawUi()

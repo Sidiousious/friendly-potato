@@ -31,7 +31,8 @@ public class PlayerCharacterDetails
     public bool Raised { get; set; }
     public bool Doomed { get; set; }
 
-    public string JobAbbreviation => Character.ClassJob.GameData?.Abbreviation.ToString() ?? string.Empty;
+    // TODO: fix to get abbreviation correctly once ClassJob resolves correctly
+    public string JobAbbreviation => Character.ClassJob.ValueNullable?.NameEnglish.ToString() ?? string.Empty;
 
     public void AddKind(PlayerCharacterKind kind)
     {
