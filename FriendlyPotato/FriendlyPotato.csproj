@@ -1,12 +1,19 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="Dalamud.Plugin.Bootstrap.targets" />
+    <Import Project="Dalamud.Plugin.Bootstrap.targets"/>
 
-  <PropertyGroup>
-    <Version>1.5.3</Version>
-    <Description>An informational plugin.</Description>
-    <PackageProjectUrl>https://github.com/sidiousious/friendly-potato</PackageProjectUrl>
-    <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
-    <IsPackable>false</IsPackable>
-  </PropertyGroup>
+    <PropertyGroup>
+        <Version>1.5.3</Version>
+        <Description>An informational plugin.</Description>
+        <PackageProjectUrl>https://github.com/sidiousious/friendly-potato</PackageProjectUrl>
+        <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Content Include="..\Data\arrow.png">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Visible>false</Visible>
+        </Content>
+    </ItemGroup>
 </Project>

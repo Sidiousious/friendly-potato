@@ -3,10 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Dalamud.Game.ClientState.Keys;
-using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
-using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using ImGuiNET;
 
 namespace FriendlyPotato.Windows;
@@ -31,7 +29,6 @@ public class PlayerListWindow : Window, IDisposable
     public PlayerListWindow(FriendlyPotato plugin, PlayerInformation playerInformation) : base(
         "Friendly Potato Player List###FriendlyPotatoDtrList")
     {
-        Flags = ImGuiWindowFlags.NoTitleBar;
         SizeCondition = ImGuiCond.FirstUseEver;
         Size = new Vector2(300f, 300f);
         this.playerInformation = playerInformation;
@@ -123,7 +120,7 @@ public class PlayerListWindow : Window, IDisposable
 
         ImGui.Text(string.Join(" & ", typeHeaders) + " Players:");
 
-        var cameraAimAngle = AimAngle(AimVector2());
+        var cameraAimAngle = CameraAngles.OwnAimAngle();
 
         var drawnPlayers = playerInformation.Players
                                             .Where(p =>
@@ -203,12 +200,9 @@ public class PlayerListWindow : Window, IDisposable
                 selectableFlags = ImGuiSelectableFlags.Disabled;
             }
 
-            var angleToTarget = AngleToTarget(player.Character, cameraAimAngle);
+            var angleToTarget = CameraAngles.AngleToTarget(player.Character, cameraAimAngle);
             var icon = DirectionArrow(angleToTarget);
-            var distance = Vector2.Distance(
-                new Vector2(FriendlyPotato.ClientState.LocalPlayer!.Position.X,
-                            FriendlyPotato.ClientState.LocalPlayer!.Position.Z),
-                new Vector2(player.Character.Position.X, player.Character.Position.Z));
+            var distance = FriendlyPotato.DistanceToTarget(player.Character);
 
             if (distance > 31.0)
             {
@@ -295,47 +289,6 @@ public class PlayerListWindow : Window, IDisposable
         } finally
         {
             ImGui.PopStyleColor(1);
-        }
-    }
-
-    private static double AngleToTarget(IPlayerCharacter character, double aimAngle)
-    {
-        var dirVector3 = FriendlyPotato.ClientState.LocalPlayer!.Position - character.Position;
-        var dirVector = Vector2.Normalize(new Vector2(dirVector3.X, dirVector3.Z));
-        var dirAngle = AimAngle(dirVector);
-        var angularDifference = dirAngle - aimAngle;
-        switch (angularDifference)
-        {
-            case > 180:
-                angularDifference -= 360;
-                break;
-            case < -180:
-                angularDifference += 360;
-                break;
-        }
-
-        return angularDifference;
-    }
-
-    private static double AimAngle(Vector2 aimVector)
-    {
-        return Math.Atan2(aimVector.Y, aimVector.X) * 180f / Math.PI;
-    }
-
-    private static unsafe Vector2 AimVector2()
-    {
-        try
-        {
-            var camera = CameraManager.Instance()->CurrentCamera;
-            var threeDAim =
-                new Vector3(camera->RenderCamera->Origin.X, camera->RenderCamera->Origin.Y,
-                            camera->RenderCamera->Origin.Z) - FriendlyPotato.ClientState.LocalPlayer!.Position;
-            return Vector2.Normalize(new Vector2(threeDAim.X, threeDAim.Z));
-        }
-        catch (NullReferenceException)
-        {
-            // Camera does not exist during loading screens
-            return Vector2.Zero;
         }
     }
 }

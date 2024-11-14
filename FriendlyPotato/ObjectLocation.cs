@@ -1,0 +1,11 @@
+using System.Numerics;
+
+namespace FriendlyPotato;
+
+public class ObjectLocation
+{
+    public float Angle { get; init; } = -1000f;
+    public double Distance { get; init; } = -1f;
+    public Vector2 Position { get; init; } = Vector2.Zero;
+    public string Name { get; init; } = string.Empty;
+}

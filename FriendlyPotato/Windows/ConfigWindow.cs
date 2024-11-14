@@ -15,7 +15,7 @@ public class ConfigWindow : Window, IDisposable
     public ConfigWindow(FriendlyPotato plugin) : base(
         $"Friendly Potato ({plugin.Version.ToString()}) Configuration###FriendlyPotatoConfig")
     {
-        Size = new Vector2(300, 360);
+        Size = new Vector2(360, 360);
         SizeCondition = ImGuiCond.Always;
 
         configuration = plugin.Configuration;
@@ -151,6 +151,49 @@ public class ConfigWindow : Window, IDisposable
             if (ImGui.Checkbox("Show players hit with Doom", ref nearbyDooms))
             {
                 configuration.DtrDoomEnabled = nearbyDooms;
+                configuration.Save();
+            }
+
+            ImGui.Spacing();
+        }
+
+        if (ImGui.CollapsingHeader("Hunt Locator Settings"))
+        {
+            ImGui.Spacing();
+            var huntLocator = configuration.ShowHuntLocator;
+            if (ImGui.Checkbox("Show hunt locator", ref huntLocator))
+            {
+                configuration.ShowHuntLocator = huntLocator;
+                configuration.Save();
+            }
+
+            ImGui.Spacing();
+
+            var offsetX = configuration.LocatorOffsetX;
+            if (ImGui.InputFloat("Locator X offset", ref offsetX))
+            {
+                offsetX = offsetX switch
+                {
+                    < -70 => -70,
+                    > 70 => 70,
+                    _ => offsetX
+                };
+
+                configuration.LocatorOffsetX = offsetX;
+                configuration.Save();
+            }
+
+            var offsetY = configuration.LocatorOffsetY;
+            if (ImGui.InputFloat("Locator Y offset", ref offsetY))
+            {
+                offsetY = offsetY switch
+                {
+                    < -70 => -70,
+                    > 70 => 70,
+                    _ => offsetY
+                };
+
+                configuration.LocatorOffsetY = offsetY;
                 configuration.Save();
             }
 

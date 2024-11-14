@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
 using System.Text;
 using Dalamud.Game.ClientState.Keys;
@@ -48,6 +50,71 @@ public sealed class FriendlyPotato : IDalamudPlugin
     private readonly Payload playerIcon = new IconPayload(BitmapFontIcon.AnyClass);
 
     private readonly PlayerInformation playerInformation = new();
+
+    private readonly uint[] sRanks =
+    [
+        // A Realm Reborn
+        0xC89, // Laideronnette
+        0xC8A, // Wulgaru
+        0xC8B, // Mindflayer
+        0xC8C, // Theda
+        0xC8D, // Zona
+        0xC8E, // Brontes
+        0xC8F, // Lamp
+        0xC90, // TODO: confirm this is nuny
+        0xC91, // Minhocao
+        0xC92, // Croque
+        0xC93, // Croak
+        0xC94, // Garlic
+        0xC95, // Bonna
+        0xC96, // Nandi
+        0xC97, // Cherno
+        0xC98, // Safat
+        0xC99, // TODO: confirm this is agrippa
+
+        // Heavensward
+        0x11C7, // KB
+        0x11C8, // TODO: confirm this is senmurv
+        0x11C9, // PR
+        0x11CA, // Gandy
+        0x11CB, // BoP
+        0x11CC, // Leucrotta
+
+        // Stormblood
+        0x1AB1, // Okina
+        0x1AB2, // Gamma
+        0x1AB3, // TODO: confirm this is Orghana
+        0x1AB4, // Udum
+        0x1AB5, // BC
+        0x1AB6, // SnL
+
+        // Shadowbringers
+        0x281E, // Agla
+        0x2838, // Ixtab
+        0x2852, // Gunitt
+        0x2873, // Tarch
+        0x288E, // Tyger
+        0x298A, // FP
+
+        // Endwalker
+        0x360A, // Burf
+        0x3670, // Sphat
+        0x35BE, // Armstrong
+        0x35BD, // Ruminator
+        0x35DC, // Ophi
+        0x35DB, // Narrow-rift
+
+        // Dawntrail
+        0x452A, // Abhorrent
+        0x4582, // Ihnu
+        0x4233, // Neyo
+        0x43DD, // Sans
+        0x416D, // Atticus
+        0x4397  // Forecaster
+
+        // 17228 - hammerheads NW koza for testing
+    ];
+
     public readonly Version Version = Assembly.GetExecutingAssembly().GetName().Version!;
     private readonly Payload weesIcon = new IconPayload(BitmapFontIcon.Meteor);
 
@@ -57,11 +124,15 @@ public sealed class FriendlyPotato : IDalamudPlugin
     {
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
 
+        var arrowImagePath = Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, "arrow.png");
+
         ConfigWindow = new ConfigWindow(this);
         PlayerListWindow = new PlayerListWindow(this, playerInformation);
+        LocatorWindow = new LocatorWindow(this, arrowImagePath);
 
         WindowSystem.AddWindow(ConfigWindow);
         WindowSystem.AddWindow(PlayerListWindow);
+        WindowSystem.AddWindow(LocatorWindow);
 
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {
@@ -94,6 +165,8 @@ public sealed class FriendlyPotato : IDalamudPlugin
         Framework.Update += FrameworkOnUpdateEvent;
     }
 
+    public static ObjectLocation SRank { get; set; } = new();
+
     [PluginService]
     internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
 
@@ -121,9 +194,13 @@ public sealed class FriendlyPotato : IDalamudPlugin
     [PluginService]
     internal static IKeyState KeyState { get; private set; } = null!;
 
+    [PluginService]
+    internal static ITextureProvider TextureProvider { get; private set; } = null!;
+
     public Configuration Configuration { get; init; }
     private ConfigWindow ConfigWindow { get; init; }
     private PlayerListWindow PlayerListWindow { get; init; }
+    private LocatorWindow LocatorWindow { get; init; }
     private IDtrBarEntry NearbyDtrBarEntry { get; set; }
 
     public void Dispose()
@@ -136,6 +213,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
         NearbyDtrBarEntry.Remove();
         ConfigWindow.Dispose();
         PlayerListWindow.Dispose();
+        LocatorWindow.Dispose();
 
         CommandManager.RemoveHandler(CommandName);
         CommandManager.RemoveHandler(DebugCommandName);
@@ -148,9 +226,26 @@ public sealed class FriendlyPotato : IDalamudPlugin
 
     private void FrameworkOnUpdateEvent(IFramework framework)
     {
+        EnsureIsOnFramework();
         if (!ClientState.IsLoggedIn || ClientState.LocalPlayer == null) return;
         UpdatePlayerList();
         UpdateDtrBar();
+
+        if (!LocatorWindow.IsOpen) LocatorWindow.Toggle();
+
+        var sRank = ObjectTable.Skip(1).OfType<IBattleNpc>().FirstOrDefault(p => sRanks.Contains(p.DataId));
+        if (sRank != null)
+        {
+            SRank = new ObjectLocation
+            {
+                Angle = (float)CameraAngles.AngleToTarget(sRank, CameraAngles.OwnAimAngle()),
+                Distance = DistanceToTarget(sRank),
+                Position = new Vector2(sRank.Position.X, sRank.Position.Z),
+                Name = sRank.Name.ToString()
+            };
+        }
+        else
+            SRank = new ObjectLocation();
     }
 
     private void UpdatePlayerList()
@@ -342,6 +437,28 @@ public sealed class FriendlyPotato : IDalamudPlugin
         NearbyDtrBarEntry.Tooltip = new SeString(new TextPayload(tooltip.ToString().Trim()));
     }
 
+    public static double DistanceToTarget(IGameObject target)
+    {
+        return Vector2.Distance(
+            new Vector2(ClientState.LocalPlayer!.Position.X,
+                        ClientState.LocalPlayer!.Position.Z),
+            new Vector2(target.Position.X, target.Position.Z));
+    }
+
+    public static Vector2 PositionToFlag(Vector2 position)
+    {
+        var scale = 100f;
+        // HW zones have different scale
+        if (ClientState.MapId is >= 397 and <= 402) scale = 95f;
+
+        return new Vector2(ScaleCoord(position.X), ScaleCoord(position.Y));
+
+        float ScaleCoord(float coord)
+        {
+            return (float)Math.Floor(((2048f / scale) + (coord / 50f) + 1f) * 10) / 10f;
+        }
+    }
+
     private static void EnsureIsOnFramework()
     {
         if (!Framework.IsInFrameworkUpdateThread)
@@ -355,14 +472,22 @@ public sealed class FriendlyPotato : IDalamudPlugin
 
     private void OnDebugCommand(string command, string args)
     {
+        var pos = ClientState.LocalPlayer!.Position;
+        var posFlat = new Vector2(pos.X, pos.Z);
+        PluginLog.Debug($"Current Position: {posFlat} - {PositionToFlag(posFlat)}");
         PluginLog.Debug("Current World");
         LogAllPropertiesBeginningWithUnknown(ClientState.LocalPlayer!.CurrentWorld.Value);
         var target = ClientState.LocalPlayer!.TargetObject;
-        if (target == null) return;
-        var targetCharacter = (IBattleChara)target;
-        PluginLog.Debug($"Statuses {targetCharacter.StatusList.Length}");
-        PluginLog.Debug(
-            $"{string.Join(", ", targetCharacter.StatusList.Select(x => $"{x.StatusId} remaining {x.RemainingTime}"))}");
+        if (target is IBattleNpc npc) PluginLog.Debug($"Name: {npc.Name} - NameID: {npc.DataId}");
+
+        if (target is IBattleChara targetCharacter)
+        {
+            PluginLog.Debug($"Statuses {targetCharacter.StatusList.Length}");
+            PluginLog.Debug(
+                $"{string.Join(", ", targetCharacter.StatusList.Select(x => $"{x.StatusId} remaining {x.RemainingTime}"))}");
+        }
+
+        PluginLog.Debug($"SRank: {SRank.Angle} {SRank.Distance}");
     }
 
     private void DrawUi()

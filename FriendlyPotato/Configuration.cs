@@ -24,6 +24,11 @@ public class Configuration : IPluginConfiguration
     public bool ListWeesEnabled { get; set; } = true;
     public bool ListDoomEnabled { get; set; } = true;
 
+    // Locator
+    public bool ShowHuntLocator { get; set; } = false;
+    public float LocatorOffsetX { get; set; } = -20;
+    public float LocatorOffsetY { get; set; } = 15;
+
     // Debug
     public bool DebugList { get; set; } = false;
     public bool DebugStatuses { get; set; } = false;
