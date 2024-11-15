@@ -24,13 +24,6 @@ using FriendlyPotato.Windows;
 
 namespace FriendlyPotato;
 
-/**
- * TODO 7.1
- * - status list is broken and always empty
- * - classjob is broken and always adventurer
- * - homeworld is broken and always 0
- */
-
 // ReSharper disable once ClassNeverInstantiated.Global - instantiated by Dalamud
 public sealed class FriendlyPotato : IDalamudPlugin
 {
@@ -307,7 +300,6 @@ public sealed class FriendlyPotato : IDalamudPlugin
         var dead = 0;
         var offWorlders = 0;
         // Local player is not included in Players list, so include own wee here
-        // TODO: fix RowId to correct property
         var wees = ClientState.LocalPlayer!.CurrentMinion?.ValueNullable?.RowId == weeEaId ? 1 : 0;
         var doomed = 0;
         var raised = 0;
@@ -315,7 +307,6 @@ public sealed class FriendlyPotato : IDalamudPlugin
         foreach (var player in playerInformation.Players)
         {
             var minion = player.Character.CurrentMinion;
-            // TODO: fix RowId to correct property
             if (minion?.RowId == weeEaId) wees++;
 
             if (player.Character.IsDead)
@@ -324,7 +315,6 @@ public sealed class FriendlyPotato : IDalamudPlugin
                 dead++;
             }
 
-            // TODO: fix RowId to correct property
             if (player.Character.HomeWorld.RowId != ClientState.LocalPlayer!.CurrentWorld.RowId)
             {
                 player.AddKind(PlayerCharacterKind.OffWorlder);

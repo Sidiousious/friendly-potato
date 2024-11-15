@@ -120,7 +120,16 @@ public class PlayerListWindow : Window, IDisposable
 
         ImGui.Text(string.Join(" & ", typeHeaders) + " Players:");
 
-        var cameraAimAngle = CameraAngles.OwnAimAngle();
+        var cameraAimVector = CameraAngles.OwnAimVector2();
+
+        if (cameraAimVector == Vector2.Zero)
+        {
+            // No camera exists, assume loading screen and disable unnecessary listing
+            ImGui.TextWrapped("<Disabled while player has no camera>");
+            return;
+        }
+
+        var cameraAimAngle = CameraAngles.AimAngle(cameraAimVector);
 
         var drawnPlayers = playerInformation.Players
                                             .Where(p =>
@@ -210,9 +219,8 @@ public class PlayerListWindow : Window, IDisposable
                 raiseText += " (FAR)";
             }
 
-            // TODO: add job abbreviation back
             var text =
-                $"[] {player.Character.Name}  {player.Character.HomeWorld.ValueNullable?.Name.ToString() ?? "Unknown"}{raiseText}";
+                $"[{player.JobAbbreviation}] {player.Character.Name}  {player.Character.HomeWorld.ValueNullable?.Name.ToString() ?? "Unknown"}{raiseText}";
             WithTextColor(color, () =>
             {
                 InlineIcon(icon);
