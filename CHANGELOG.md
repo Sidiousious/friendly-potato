@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.7.0"></a>
+## 1.7.0 (2024-11-16)
+
+### Features
+
+* added toggle for showing chat flags for S ranks
+* flag S ranks in chat
+
+### Bug Fixes
+
+* use correct map IDs for HW, fixes offset coordinates in HW zones
+
 <a name="1.6.1"></a>
 ## 1.6.1 (2024-11-15)
 
