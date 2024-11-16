@@ -446,7 +446,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
     {
         var scale = 100f;
         // HW zones have different scale
-        if (ClientState.MapId is >= 397 and <= 402) scale = 95f;
+        if (ClientState.MapId is >= 211 and <= 216) scale = 95f;
 
         return new Vector2(ScaleCoord(position.X), ScaleCoord(position.Y));
 
