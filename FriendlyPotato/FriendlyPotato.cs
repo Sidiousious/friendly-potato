@@ -35,6 +35,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
     private const string OffWorlders = "Off-Worlders: ";
     private const string Wees = "Wees: ";
     private const string Doomed = "Doomed: ";
+
     private readonly Payload deadIcon = new IconPayload(BitmapFontIcon.Disconnecting);
     private readonly Payload doomedIcon = new IconPayload(BitmapFontIcon.OrangeDiamond);
     private readonly Payload dtrSeparator = new TextPayload("  ");
@@ -190,6 +191,9 @@ public sealed class FriendlyPotato : IDalamudPlugin
     [PluginService]
     internal static ITextureProvider TextureProvider { get; private set; } = null!;
 
+    [PluginService]
+    internal static IChatGui ChatGui { get; private set; } = null!;
+
     public Configuration Configuration { get; init; }
     private ConfigWindow ConfigWindow { get; init; }
     private PlayerListWindow PlayerListWindow { get; init; }
@@ -229,11 +233,14 @@ public sealed class FriendlyPotato : IDalamudPlugin
         var sRank = ObjectTable.Skip(1).OfType<IBattleNpc>().FirstOrDefault(p => sRanks.Contains(p.DataId));
         if (sRank != null)
         {
+            var pos = new Vector2(sRank.Position.X, sRank.Position.Z);
+            // Previous tick had none
+            if (SRank.Distance < 0) SendChatFlag(pos, $"You sense the presence of a powerful mark... {sRank.Name}", 14);
             SRank = new ObjectLocation
             {
                 Angle = (float)CameraAngles.AngleToTarget(sRank, CameraAngles.OwnAimAngle()),
                 Distance = DistanceToTarget(sRank),
-                Position = new Vector2(sRank.Position.X, sRank.Position.Z),
+                Position = pos,
                 Name = sRank.Name.ToString()
             };
         }
@@ -447,6 +454,21 @@ public sealed class FriendlyPotato : IDalamudPlugin
         {
             return (float)Math.Floor(((2048f / scale) + (coord / 50f) + 1f) * 10) / 10f;
         }
+    }
+
+    private static void SendChatFlag(Vector2 position, string text, ushort colorKey = 0)
+    {
+        var flagCoords = PositionToFlag(position);
+        var mapLink = SeString.CreateMapLink(ClientState.TerritoryType, ClientState.MapId, flagCoords.X, flagCoords.Y);
+        var message = new SeStringBuilder();
+        message.AddUiForeground(colorKey);
+        message.AddText(text);
+        message.AddUiForegroundOff();
+        message.AddText(" - ");
+        message.AddUiForeground(64); // White for the flag
+        message.Append(mapLink);
+        message.AddUiForegroundOff();
+        ChatGui.Print(message.BuiltString);
     }
 
     private static void EnsureIsOnFramework()
