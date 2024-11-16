@@ -168,6 +168,14 @@ public class ConfigWindow : Window, IDisposable
             }
 
             ImGui.Spacing();
+            var chatLocator = configuration.ChatLocatorEnabled;
+            if (ImGui.Checkbox("Show S rank flags in chat", ref chatLocator))
+            {
+                configuration.ChatLocatorEnabled = chatLocator;
+                configuration.Save();
+            }
+
+            ImGui.Spacing();
 
             var offsetX = configuration.LocatorOffsetX;
             if (ImGui.InputFloat("Locator X offset", ref offsetX))

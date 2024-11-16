@@ -35,6 +35,8 @@ public sealed class FriendlyPotato : IDalamudPlugin
     private const string OffWorlders = "Off-Worlders: ";
     private const string Wees = "Wees: ";
     private const string Doomed = "Doomed: ";
+    private const ushort SeColorWineRed = 14;
+    private const ushort SeColorWhite = 64;
 
     private readonly Payload deadIcon = new IconPayload(BitmapFontIcon.Disconnecting);
     private readonly Payload doomedIcon = new IconPayload(BitmapFontIcon.OrangeDiamond);
@@ -235,7 +237,8 @@ public sealed class FriendlyPotato : IDalamudPlugin
         {
             var pos = new Vector2(sRank.Position.X, sRank.Position.Z);
             // Previous tick had none
-            if (SRank.Distance < 0) SendChatFlag(pos, $"You sense the presence of a powerful mark... {sRank.Name}", 14);
+            if (SRank.Distance < 0 && Configuration.ChatLocatorEnabled)
+                SendChatFlag(pos, $"You sense the presence of a powerful mark... {sRank.Name}", SeColorWineRed);
             SRank = new ObjectLocation
             {
                 Angle = (float)CameraAngles.AngleToTarget(sRank, CameraAngles.OwnAimAngle()),
@@ -465,7 +468,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
         message.AddText(text);
         message.AddUiForegroundOff();
         message.AddText(" - ");
-        message.AddUiForeground(64); // White for the flag
+        message.AddUiForeground(SeColorWhite);
         message.Append(mapLink);
         message.AddUiForegroundOff();
         ChatGui.Print(message.BuiltString);
