@@ -487,10 +487,8 @@ public sealed class FriendlyPotato : IDalamudPlugin
         var pos = ClientState.LocalPlayer!.Position;
         var posFlat = new Vector2(pos.X, pos.Z);
         PluginLog.Debug($"Current Position: {posFlat} - {PositionToFlag(posFlat)}");
-        PluginLog.Debug("Current World");
-        LogAllPropertiesBeginningWithUnknown(ClientState.LocalPlayer!.CurrentWorld.Value);
         var target = ClientState.LocalPlayer!.TargetObject;
-        if (target is IBattleNpc npc) PluginLog.Debug($"Name: {npc.Name} - NameID: {npc.DataId}");
+        if (target is IBattleNpc npc) PluginLog.Debug($"Name: {npc.Name} - DataId: {npc.DataId}");
 
         if (target is IBattleChara targetCharacter)
         {
@@ -498,8 +496,6 @@ public sealed class FriendlyPotato : IDalamudPlugin
             PluginLog.Debug(
                 $"{string.Join(", ", targetCharacter.StatusList.Select(x => $"{x.StatusId} remaining {x.RemainingTime}"))}");
         }
-
-        PluginLog.Debug($"SRank: {SRank.Angle} {SRank.Distance}");
     }
 
     private void DrawUi()
