@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.8.0"></a>
+## 1.8.0 (2024-11-18)
+
+### Features
+
+* add A ranks and sound notifications
+
 <a name="1.7.0"></a>
 ## 1.7.0 (2024-11-16)
 
