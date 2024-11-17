@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.8.1"></a>
+## 1.8.1 (2024-11-18)
+
+### Bug Fixes
+
+* multiple active arrows no longer overlap
+
 <a name="1.8.0"></a>
 ## 1.8.0 (2024-11-18)
 
