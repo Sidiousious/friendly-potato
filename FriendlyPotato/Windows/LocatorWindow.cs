@@ -67,7 +67,6 @@ public class LocatorWindow : Window, IDisposable
             ImGui.Text($"{sRank.Name}");
             ImGui.Text($"(x {flag.X} , y {flag.Y}) {sRank.Distance:F1}y");
             DrawImageRotated(texture, sRank.Angle);
-
             ImGui.Spacing();
         }
     }
@@ -101,5 +100,7 @@ public class LocatorWindow : Window, IDisposable
                                            (-halfSize.X * sin) + (halfSize.Y * cos));
 
         drawList.AddImageQuad(texture.ImGuiHandle, vertices[0], vertices[1], vertices[2], vertices[3]);
+
+        ImGui.Dummy(new Vector2(texture.Width, texture.Height));
     }
 }

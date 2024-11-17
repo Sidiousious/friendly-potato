@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -242,6 +241,27 @@ public sealed class FriendlyPotato : IDalamudPlugin
             ObjectLocations[mob.DataId] = objLoc;
             visible.Add(mob.DataId);
         }
+#if DEBUG
+        if (Configuration.DebugList)
+        {
+            var target = ClientState.LocalPlayer!.TargetObject;
+            if (target is IBattleNpc mob)
+            {
+                var pos = new Vector2(mob.Position.X, mob.Position.Z);
+
+                var objLoc = new ObjectLocation
+                {
+                    Angle = (float)CameraAngles.AngleToTarget(mob, CameraAngles.OwnAimAngle()),
+                    Distance = DistanceToTarget(mob),
+                    Position = pos,
+                    Name = mob.Name.ToString(),
+                    Type = ObjectLocation.Variant.SRank
+                };
+                visible.Add(mob.DataId);
+                ObjectLocations[mob.DataId] = objLoc;
+            }
+        }
+#endif
 
         VisibleHunts = visible.ToImmutableList();
     }
@@ -257,23 +277,6 @@ public sealed class FriendlyPotato : IDalamudPlugin
                                             Character = p
                                         }).ToImmutableList();
         UpdatePlayerTypes();
-    }
-
-    private static object? GetValueOrDefault<T>([DisallowNull] T obj1, PropertyInfo prop)
-    {
-        try
-        {
-            return prop.GetValue(obj1);
-        }
-        catch (TargetInvocationException)
-        {
-            return "[NO VALUE]";
-        }
-        catch (Exception ex)
-        {
-            PluginLog.Error(ex.ToString());
-            return "[ERR]";
-        }
     }
 
     private void UpdatePlayerTypes()
