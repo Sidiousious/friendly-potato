@@ -27,6 +27,9 @@ public class Configuration : IPluginConfiguration
     // Locator
     public bool ShowHuntLocator { get; set; } = false;
     public bool ChatLocatorEnabled { get; set; } = false;
+    public bool SRankSoundEnabled { get; set; } = false;
+    public bool ChatLocatorARanksEnabled { get; set; } = false;
+    public bool ARankSoundEnabled { get; set; } = false;
     public float LocatorOffsetX { get; set; } = -20;
     public float LocatorOffsetY { get; set; } = 15;
 

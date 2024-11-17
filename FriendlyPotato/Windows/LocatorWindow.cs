@@ -9,21 +9,19 @@ namespace FriendlyPotato.Windows;
 
 public class LocatorWindow : Window, IDisposable
 {
-    private readonly string arrowImagePath;
     private readonly Configuration configuration;
 
     // We give this window a constant ID using ###
     // This allows for labels being dynamic, like "{FPS Counter}fps###XYZ counter window",
     // and the window ID will always be "###XYZ counter window" for ImGui
-    public LocatorWindow(FriendlyPotato plugin, string arrowImagePath) : base(
+    public LocatorWindow(FriendlyPotato plugin) : base(
         "Friendly Potato Hunt Locator###FriendlyPotatoHuntLocator")
     {
         Flags = ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoBackground;
         SizeCondition = ImGuiCond.Always;
-        Size = new Vector2(300f, 300f);
+        Size = new Vector2(300f, 600f);
         PositionCondition = ImGuiCond.Always;
         configuration = plugin.Configuration;
-        this.arrowImagePath = arrowImagePath;
     }
 
     public void Dispose() { }
@@ -44,23 +42,34 @@ public class LocatorWindow : Window, IDisposable
     {
         if (!configuration.ShowHuntLocator) return;
 
-        var sRank = FriendlyPotato.SRank;
-
-        if (sRank.Distance < 0f) return;
-
-        var texture = FriendlyPotato.TextureProvider
-                                    .GetFromFile(arrowImagePath)
-                                    .GetWrapOrDefault();
-        if (texture == null)
+        foreach (var huntId in FriendlyPotato.VisibleHunts)
         {
-            FriendlyPotato.PluginLog.Warning("Could not find texture `{0}`", arrowImagePath);
-            return;
-        }
+            if (!FriendlyPotato.ObjectLocations.TryGetValue(huntId, out var sRank)) continue;
 
-        var flag = FriendlyPotato.PositionToFlag(sRank.Position);
-        ImGui.Text($"{sRank.Name}");
-        ImGui.Text($"(x {flag.X} , y {flag.Y}) {sRank.Distance:F1}y");
-        DrawImageRotated(texture, sRank.Angle);
+            if (sRank.Distance < 0f) return;
+
+            var arrowImagePath = sRank.Type switch
+            {
+                ObjectLocation.Variant.ARank => FriendlyPotato.AssetPath("purplearrow.png"),
+                _ => FriendlyPotato.AssetPath("arrow.png")
+            };
+
+            var texture = FriendlyPotato.TextureProvider
+                                        .GetFromFile(arrowImagePath)
+                                        .GetWrapOrDefault();
+            if (texture == null)
+            {
+                FriendlyPotato.PluginLog.Warning("Could not find texture `{0}`", arrowImagePath);
+                return;
+            }
+
+            var flag = FriendlyPotato.PositionToFlag(sRank.Position);
+            ImGui.Text($"{sRank.Name}");
+            ImGui.Text($"(x {flag.X} , y {flag.Y}) {sRank.Distance:F1}y");
+            DrawImageRotated(texture, sRank.Angle);
+
+            ImGui.Spacing();
+        }
     }
 
     private void DrawImageRotated(IDalamudTextureWrap texture, float angle)

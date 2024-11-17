@@ -176,6 +176,30 @@ public class ConfigWindow : Window, IDisposable
             }
 
             ImGui.Spacing();
+            var sSound = configuration.SRankSoundEnabled;
+            if (ImGui.Checkbox("Play notification sound on S spawn", ref sSound))
+            {
+                configuration.SRankSoundEnabled = sSound;
+                configuration.Save();
+            }
+
+            ImGui.Spacing();
+            var aLocator = configuration.ChatLocatorARanksEnabled;
+            if (ImGui.Checkbox("Show A rank flags in chat", ref aLocator))
+            {
+                configuration.ChatLocatorARanksEnabled = aLocator;
+                configuration.Save();
+            }
+
+            ImGui.Spacing();
+            var aSound = configuration.ARankSoundEnabled;
+            if (ImGui.Checkbox("Play notification sound on A spawn", ref aSound))
+            {
+                configuration.ARankSoundEnabled = aSound;
+                configuration.Save();
+            }
+
+            ImGui.Spacing();
 
             var offsetX = configuration.LocatorOffsetX;
             if (ImGui.InputFloat("Locator X offset", ref offsetX))

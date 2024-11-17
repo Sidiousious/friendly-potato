@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
@@ -20,7 +21,9 @@ using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using FriendlyPotato.Windows;
+using Lumina.Excel.Sheets;
 
 namespace FriendlyPotato;
 
@@ -37,6 +40,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
     private const string Doomed = "Doomed: ";
     private const ushort SeColorWineRed = 14;
     private const ushort SeColorWhite = 64;
+    private readonly uint[] aRanks;
 
     private readonly Payload deadIcon = new IconPayload(BitmapFontIcon.Disconnecting);
     private readonly Payload doomedIcon = new IconPayload(BitmapFontIcon.OrangeDiamond);
@@ -47,69 +51,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
 
     private readonly PlayerInformation playerInformation = new();
 
-    private readonly uint[] sRanks =
-    [
-        // A Realm Reborn
-        0xC89, // Laideronnette
-        0xC8A, // Wulgaru
-        0xC8B, // Mindflayer
-        0xC8C, // Theda
-        0xC8D, // Zona
-        0xC8E, // Brontes
-        0xC8F, // Lamp
-        0xC90, // TODO: confirm this is nuny
-        0xC91, // Minhocao
-        0xC92, // Croque
-        0xC93, // Croak
-        0xC94, // Garlic
-        0xC95, // Bonna
-        0xC96, // Nandi
-        0xC97, // Cherno
-        0xC98, // Safat
-        0xC99, // TODO: confirm this is agrippa
-
-        // Heavensward
-        0x11C7, // KB
-        0x11C8, // TODO: confirm this is senmurv
-        0x11C9, // PR
-        0x11CA, // Gandy
-        0x11CB, // BoP
-        0x11CC, // Leucrotta
-
-        // Stormblood
-        0x1AB1, // Okina
-        0x1AB2, // Gamma
-        0x1AB3, // TODO: confirm this is Orghana
-        0x1AB4, // Udum
-        0x1AB5, // BC
-        0x1AB6, // SnL
-
-        // Shadowbringers
-        0x281E, // Agla
-        0x2838, // Ixtab
-        0x2852, // Gunitt
-        0x2873, // Tarch
-        0x288E, // Tyger
-        0x298A, // FP
-
-        // Endwalker
-        0x360A, // Burf
-        0x3670, // Sphat
-        0x35BE, // Armstrong
-        0x35BD, // Ruminator
-        0x35DC, // Ophi
-        0x35DB, // Narrow-rift
-
-        // Dawntrail
-        0x452A, // Abhorrent
-        0x4582, // Ihnu
-        0x4233, // Neyo
-        0x43DD, // Sans
-        0x416D, // Atticus
-        0x4397  // Forecaster
-
-        // 17228 - hammerheads NW koza for testing
-    ];
+    private readonly uint[] sRanks;
 
     public readonly Version Version = Assembly.GetExecutingAssembly().GetName().Version!;
     private readonly Payload weesIcon = new IconPayload(BitmapFontIcon.Meteor);
@@ -120,11 +62,9 @@ public sealed class FriendlyPotato : IDalamudPlugin
     {
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
 
-        var arrowImagePath = Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, "arrow.png");
-
         ConfigWindow = new ConfigWindow(this);
         PlayerListWindow = new PlayerListWindow(this, playerInformation);
-        LocatorWindow = new LocatorWindow(this, arrowImagePath);
+        LocatorWindow = new LocatorWindow(this);
 
         WindowSystem.AddWindow(ConfigWindow);
         WindowSystem.AddWindow(PlayerListWindow);
@@ -159,9 +99,14 @@ public sealed class FriendlyPotato : IDalamudPlugin
         };
 
         Framework.Update += FrameworkOnUpdateEvent;
+
+        var hunts = NotoriousMonsters();
+        sRanks = hunts.SRanks;
+        aRanks = hunts.ARanks;
     }
 
-    public static ObjectLocation SRank { get; set; } = new();
+    public static ConcurrentDictionary<uint, ObjectLocation> ObjectLocations { get; private set; } = [];
+    public static ImmutableList<uint> VisibleHunts { get; private set; } = ImmutableList<uint>.Empty;
 
     [PluginService]
     internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
@@ -196,6 +141,9 @@ public sealed class FriendlyPotato : IDalamudPlugin
     [PluginService]
     internal static IChatGui ChatGui { get; private set; } = null!;
 
+    [PluginService]
+    internal static IDataManager DataManager { get; private set; } = null!;
+
     public Configuration Configuration { get; init; }
     private ConfigWindow ConfigWindow { get; init; }
     private PlayerListWindow PlayerListWindow { get; init; }
@@ -218,6 +166,11 @@ public sealed class FriendlyPotato : IDalamudPlugin
         CommandManager.RemoveHandler(DebugCommandName);
     }
 
+    public static string AssetPath(string assetName)
+    {
+        return Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, assetName);
+    }
+
     private void Logout(int _, int __)
     {
         if (PlayerListWindow.IsOpen) PlayerListWindow.Toggle();
@@ -232,23 +185,65 @@ public sealed class FriendlyPotato : IDalamudPlugin
 
         if (!LocatorWindow.IsOpen) LocatorWindow.Toggle();
 
-        var sRank = ObjectTable.Skip(1).OfType<IBattleNpc>().FirstOrDefault(p => sRanks.Contains(p.DataId));
-        if (sRank != null)
+        UpdateVisibleHunts();
+    }
+
+    private void UpdateVisibleHunts()
+    {
+        EnsureIsOnFramework();
+
+        List<uint> visible = [];
+        foreach (var mob in ObjectTable.Skip(1).OfType<IBattleNpc>())
         {
-            var pos = new Vector2(sRank.Position.X, sRank.Position.Z);
-            // Previous tick had none
-            if (SRank.Distance < 0 && Configuration.ChatLocatorEnabled)
-                SendChatFlag(pos, $"You sense the presence of a powerful mark... {sRank.Name}", SeColorWineRed);
-            SRank = new ObjectLocation
+            var pos = new Vector2(mob.Position.X, mob.Position.Z);
+            var previouslyVisible = VisibleHunts.Contains(mob.DataId);
+
+            ObjectLocation.Variant variant;
+            if (sRanks.Contains(mob.DataId))
             {
-                Angle = (float)CameraAngles.AngleToTarget(sRank, CameraAngles.OwnAimAngle()),
-                Distance = DistanceToTarget(sRank),
+                variant = ObjectLocation.Variant.SRank;
+
+                if (!previouslyVisible)
+                {
+                    if (Configuration.ChatLocatorEnabled)
+                        SendChatFlag(pos, $"You sense the presence of a powerful mark... {mob.Name}", SeColorWineRed);
+
+                    if (Configuration.SRankSoundEnabled)
+                        UIGlobals.PlayChatSoundEffect(2);
+                }
+            }
+            else if (aRanks.Contains(mob.DataId))
+            {
+                variant = ObjectLocation.Variant.ARank;
+
+                if (!previouslyVisible)
+                {
+                    if (Configuration.ChatLocatorARanksEnabled)
+                        SendChatFlag(pos, $"A-rank detected... {mob.Name}", 1);
+
+                    if (Configuration.ARankSoundEnabled)
+                        UIGlobals.PlayChatSoundEffect(2);
+                }
+            }
+            else
+            {
+                // Not interested
+                continue;
+            }
+
+            var objLoc = new ObjectLocation
+            {
+                Angle = (float)CameraAngles.AngleToTarget(mob, CameraAngles.OwnAimAngle()),
+                Distance = DistanceToTarget(mob),
                 Position = pos,
-                Name = sRank.Name.ToString()
+                Name = mob.Name.ToString(),
+                Type = variant
             };
+            ObjectLocations[mob.DataId] = objLoc;
+            visible.Add(mob.DataId);
         }
-        else
-            SRank = new ObjectLocation();
+
+        VisibleHunts = visible.ToImmutableList();
     }
 
     private void UpdatePlayerList()
@@ -262,27 +257,6 @@ public sealed class FriendlyPotato : IDalamudPlugin
                                             Character = p
                                         }).ToImmutableList();
         UpdatePlayerTypes();
-    }
-
-    private static void LogAllPropertiesBeginningWithUnknown<T>(T obj)
-    {
-        if (obj == null)
-        {
-            PluginLog.Debug("obj is null");
-            return;
-        }
-
-        try
-        {
-            var type = obj.GetType();
-            var props = type.GetProperties();
-            foreach (var prop in props)
-                PluginLog.Debug($"'{prop.Name}' of type {prop.PropertyType.Name}: {GetValueOrDefault(obj, prop)}");
-        }
-        catch (Exception ex)
-        {
-            PluginLog.Error(ex.ToString());
-        }
     }
 
     private static object? GetValueOrDefault<T>([DisallowNull] T obj1, PropertyInfo prop)
@@ -491,13 +465,33 @@ public sealed class FriendlyPotato : IDalamudPlugin
         var posFlat = new Vector2(pos.X, pos.Z);
         PluginLog.Debug($"Current Position: {posFlat} - {PositionToFlag(posFlat)}");
         var target = ClientState.LocalPlayer!.TargetObject;
-        if (target is IBattleNpc npc) PluginLog.Debug($"Name: {npc.Name} - DataId: {npc.DataId}");
+        if (target is IBattleNpc npc)
+        {
+            PluginLog.Debug(
+                $"Name: {npc.Name} - DataId: {npc.DataId} - is A rank? {aRanks.Contains(npc.DataId)} - is S rank? {sRanks.Contains(npc.DataId)}");
+        }
 
         if (target is IBattleChara targetCharacter)
         {
             PluginLog.Debug($"Statuses {targetCharacter.StatusList.Length}");
             PluginLog.Debug(
                 $"{string.Join(", ", targetCharacter.StatusList.Select(x => $"{x.StatusId} remaining {x.RemainingTime}"))}");
+        }
+
+        PluginLog.Debug($"Visible Hunts: {string.Join(", ", VisibleHunts)}");
+    }
+
+    private (uint[] SRanks, uint[] ARanks) NotoriousMonsters()
+    {
+        const byte sRank = 3;
+        const byte aRank = 2;
+        return (Ranks(sRank), Ranks(aRank));
+
+        uint[] Ranks(byte typeOfRank)
+        {
+            return DataManager.GetExcelSheet<NotoriousMonster>().Where(m => m.Rank == typeOfRank)
+                              .Select(m => m.BNpcBase.ValueNullable?.RowId).Where(m => m.HasValue).Select(m => m!.Value)
+                              .ToArray();
         }
     }
 
