@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.8.2"></a>
+## 1.8.2 (2024-11-18)
+
+### Bug Fixes
+
+* include instance in echoed flags
+
 <a name="1.8.1"></a>
 ## 1.8.1 (2024-11-18)
 
