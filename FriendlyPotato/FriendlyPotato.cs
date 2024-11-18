@@ -20,6 +20,7 @@ using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FriendlyPotato.Windows;
 using Lumina.Excel.Sheets;
@@ -197,6 +198,20 @@ public sealed class FriendlyPotato : IDalamudPlugin
             var pos = new Vector2(mob.Position.X, mob.Position.Z);
             var previouslyVisible = VisibleHunts.Contains(mob.DataId);
 
+            int? instance = null;
+            unsafe
+            {
+                try
+                {
+                    instance = Convert.ToInt32(UIState.Instance()->PublicInstance.InstanceId);
+                    if (instance.Value == 0) instance = null;
+                }
+                catch (Exception ex)
+                {
+                    PluginLog.Error(ex.ToString());
+                }
+            }
+
             ObjectLocation.Variant variant;
             if (sRanks.Contains(mob.DataId))
             {
@@ -205,7 +220,10 @@ public sealed class FriendlyPotato : IDalamudPlugin
                 if (!previouslyVisible)
                 {
                     if (Configuration.ChatLocatorEnabled)
-                        SendChatFlag(pos, $"You sense the presence of a powerful mark... {mob.Name}", SeColorWineRed);
+                    {
+                        SendChatFlag(pos, instance, $"You sense the presence of a powerful mark... {mob.Name}",
+                                     SeColorWineRed);
+                    }
 
                     if (Configuration.SRankSoundEnabled)
                         UIGlobals.PlayChatSoundEffect(2);
@@ -218,7 +236,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
                 if (!previouslyVisible)
                 {
                     if (Configuration.ChatLocatorARanksEnabled)
-                        SendChatFlag(pos, $"A-rank detected... {mob.Name}", 1);
+                        SendChatFlag(pos, instance, $"A-rank detected... {mob.Name}", 1);
 
                     if (Configuration.ARankSoundEnabled)
                         UIGlobals.PlayChatSoundEffect(2);
@@ -235,7 +253,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
                 Angle = (float)CameraAngles.AngleToTarget(mob, CameraAngles.OwnAimAngle()),
                 Distance = DistanceToTarget(mob),
                 Position = pos,
-                Name = mob.Name.ToString(),
+                Name = mob.Name.TextValue,
                 Type = variant
             };
             ObjectLocations[mob.DataId] = objLoc;
@@ -254,7 +272,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
                     Angle = (float)CameraAngles.AngleToTarget(mob, CameraAngles.OwnAimAngle()),
                     Distance = DistanceToTarget(mob),
                     Position = pos,
-                    Name = mob.Name.ToString(),
+                    Name = mob.Name.TextValue,
                     Type = ObjectLocation.Variant.SRank
                 };
                 visible.Add(mob.DataId);
@@ -271,7 +289,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
         EnsureIsOnFramework();
         playerInformation.Players = ObjectTable
                                     .Skip(1).OfType<IPlayerCharacter>()
-                                    .Where(p => !string.IsNullOrEmpty(p.Name.ToString())).Select(
+                                    .Where(p => !string.IsNullOrEmpty(p.Name.TextValue)).Select(
                                         p => new PlayerCharacterDetails
                                         {
                                             Character = p
@@ -436,10 +454,11 @@ public sealed class FriendlyPotato : IDalamudPlugin
         }
     }
 
-    private static void SendChatFlag(Vector2 position, string text, ushort colorKey = 0)
+    private static void SendChatFlag(Vector2 position, int? instance, string text, ushort colorKey = 0)
     {
         var flagCoords = PositionToFlag(position);
-        var mapLink = SeString.CreateMapLink(ClientState.TerritoryType, ClientState.MapId, flagCoords.X, flagCoords.Y);
+        var mapLink = SeString.CreateMapLinkWithInstance(ClientState.TerritoryType, ClientState.MapId, instance,
+                                                         flagCoords.X, flagCoords.Y);
         var message = new SeStringBuilder();
         message.AddUiForeground(colorKey);
         message.AddText(text);
@@ -482,6 +501,11 @@ public sealed class FriendlyPotato : IDalamudPlugin
         }
 
         PluginLog.Debug($"Visible Hunts: {string.Join(", ", VisibleHunts)}");
+
+        unsafe
+        {
+            PluginLog.Debug($"Currently in instance: {UIState.Instance()->PublicInstance.InstanceId}");
+        }
     }
 
     private (uint[] SRanks, uint[] ARanks) NotoriousMonsters()

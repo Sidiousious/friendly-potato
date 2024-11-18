@@ -220,7 +220,7 @@ public class PlayerListWindow : Window, IDisposable
             }
 
             var text =
-                $"[{player.JobAbbreviation}] {player.Character.Name}  {player.Character.HomeWorld.ValueNullable?.Name.ToString() ?? "Unknown"}{raiseText}";
+                $"[{player.JobAbbreviation}] {player.Character.Name}  {player.Character.HomeWorld.ValueNullable?.Name.ExtractText() ?? "Unknown"}{raiseText}";
             WithTextColor(color, () =>
             {
                 InlineIcon(icon);
