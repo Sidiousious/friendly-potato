@@ -41,6 +41,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
     private const ushort SeColorWineRed = 14;
     private const ushort SeColorWhite = 64;
     private readonly uint[] aRanks;
+    private readonly uint[] bRanks;
 
     private readonly Payload deadIcon = new IconPayload(BitmapFontIcon.Disconnecting);
     private readonly Payload doomedIcon = new IconPayload(BitmapFontIcon.OrangeDiamond);
@@ -50,7 +51,6 @@ public sealed class FriendlyPotato : IDalamudPlugin
     private readonly Payload playerIcon = new IconPayload(BitmapFontIcon.AnyClass);
 
     private readonly PlayerInformation playerInformation = new();
-
     private readonly uint[] sRanks;
 
     public readonly Version Version = Assembly.GetExecutingAssembly().GetName().Version!;
@@ -103,6 +103,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
         var hunts = NotoriousMonsters();
         sRanks = hunts.SRanks;
         aRanks = hunts.ARanks;
+        bRanks = hunts.BRanks;
     }
 
     public static ConcurrentDictionary<uint, ObjectLocation> ObjectLocations { get; private set; } = [];
@@ -242,6 +243,8 @@ public sealed class FriendlyPotato : IDalamudPlugin
                         UIGlobals.PlayChatSoundEffect(2);
                 }
             }
+            else if (bRanks.Contains(mob.DataId))
+                variant = ObjectLocation.Variant.BRank;
             else
             {
                 // Not interested
@@ -332,7 +335,6 @@ public sealed class FriendlyPotato : IDalamudPlugin
                 friends++;
             }
 
-            // TODO: verify StatusList still works and statusIds have not changed
             foreach (var status in player.Character.StatusList)
             {
                 if (Configuration.DebugStatuses && status.RemainingTime > 0)
@@ -485,7 +487,8 @@ public sealed class FriendlyPotato : IDalamudPlugin
     {
         var pos = ClientState.LocalPlayer!.Position;
         var posFlat = new Vector2(pos.X, pos.Z);
-        PluginLog.Debug($"Current Position: {posFlat} - {PositionToFlag(posFlat)}");
+        PluginLog.Debug(
+            $"Current Position: {posFlat} - {PositionToFlag(posFlat)} - {ClientState.TerritoryType} - {ClientState.MapId}");
         var target = ClientState.LocalPlayer!.TargetObject;
         if (target is IBattleNpc npc)
         {
@@ -508,11 +511,12 @@ public sealed class FriendlyPotato : IDalamudPlugin
         }
     }
 
-    private (uint[] SRanks, uint[] ARanks) NotoriousMonsters()
+    private (uint[] SRanks, uint[] ARanks, uint[] BRanks) NotoriousMonsters()
     {
         const byte sRank = 3;
         const byte aRank = 2;
-        return (Ranks(sRank), Ranks(aRank));
+        const byte bRank = 1;
+        return (Ranks(sRank), Ranks(aRank), Ranks(bRank));
 
         uint[] Ranks(byte typeOfRank)
         {

@@ -51,6 +51,7 @@ public class LocatorWindow : Window, IDisposable
             var arrowImagePath = sRank.Type switch
             {
                 ObjectLocation.Variant.ARank => FriendlyPotato.AssetPath("purplearrow.png"),
+                ObjectLocation.Variant.BRank => FriendlyPotato.AssetPath("bluearrow.png"),
                 _ => FriendlyPotato.AssetPath("arrow.png")
             };
 

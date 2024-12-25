@@ -7,7 +7,8 @@ public class ObjectLocation
     public enum Variant
     {
         SRank,
-        ARank
+        ARank,
+        BRank
     }
 
     public float Angle { get; init; } = -1000f;
