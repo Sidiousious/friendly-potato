@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.9.0"></a>
+## 1.9.0 (2024-12-25)
+
+### Features
+
+* add B rank arrow
+
 <a name="1.8.2"></a>
 ## 1.8.2 (2024-11-18)
 
