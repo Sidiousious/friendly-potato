@@ -16,4 +16,5 @@ public class ObjectLocation
     public Vector2 Position { get; init; } = Vector2.Zero;
     public string Name { get; init; } = string.Empty;
     public Variant Type { get; init; } = Variant.SRank;
+    public float Health { get; init; } = -1f;
 }

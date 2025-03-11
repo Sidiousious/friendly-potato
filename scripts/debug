@@ -1,7 +1,39 @@
 #!/usr/bin/env fish
 
-dotnet build && \
-cp ./FriendlyPotato/bin/x64/Debug/*.png ~/.xlcore/protonprefix/drive_c/ && \
-cp ./FriendlyPotato/bin/x64/Debug/FriendlyPotato.json ~/.xlcore/protonprefix/drive_c/FriendlyPotato.json && \
-sed -i 's/"friendly-potato"/"friendly-potato-dev"/g' ~/.xlcore/protonprefix/drive_c/FriendlyPotato.json && \
+dotnet build
+cp ./FriendlyPotato/bin/x64/Debug/*.png ~/.xlcore/protonprefix/drive_c/
+cp ./FriendlyPotato/bin/x64/Debug/FriendlyPotato.json ~/.xlcore/protonprefix/drive_c/FriendlyPotato.json
+sed -i 's/"friendly-potato"/"friendly-potato-dev"/g' ~/.xlcore/protonprefix/drive_c/FriendlyPotato.json
 cp ./FriendlyPotato/bin/x64/Debug/FriendlyPotato.dll ~/.xlcore/protonprefix/drive_c/FriendlyPotato.dll
+
+dotnet build -c Release --output ./out
+set VERSION (ls -t ~/.xlcore/installedPlugins/FriendlyPotato | head -n 1)
+rsync -a ./out/ ~/.xlcore/installedPlugins/FriendlyPotato/$VERSION/
+
+echo '[
+  {
+    "Author": "YF",
+    "Name": "Friendly Potato (Local)",
+    "InternalName": "FriendlyPotato",
+    "AssemblyVersion": "$VERSION",
+    "Description": "An informational plugin.",
+    "ApplicableVersion": "any",
+    "RepoUrl": "https://github.com/Sidiousious/friendly-potato",
+    "Tags": [
+      "Hunt",
+      "Information"
+    ],
+    "DalamudApiLevel": 11,
+    "LoadPriority": 0,
+    "DownloadCount": 69,
+    "IconUrl": "https://yfplugins.kinkop.eu/friendlypotatologo.png",
+    "Punchline": "An information plugin.",
+    "IsHide": "False",
+    "IsTestingExclusive": "False",
+    "DownloadLinkInstall": "http://localhost/plogon/friendly-potato/$VERSION.zip",
+    "DownloadLinkTesting": "https://localhost/plogon/friendly-potato/$VERSION.zip",
+    "DownloadLinkUpdate": "https://localhost/plogon/friendly-potato/$VERSION.zip"
+  }
+]' | sed "s/\\\$VERSION/$VERSION/g" >/usr/share/caddy/plogon/friendly-potato/repository.json
+
+cp out/FriendlyPotato/latest.zip /usr/share/caddy/plogon/friendly-potato/$VERSION.zip

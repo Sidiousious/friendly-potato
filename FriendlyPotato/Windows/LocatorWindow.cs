@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Numerics;
 using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Interface.Utility;
@@ -7,9 +8,11 @@ using ImGuiNET;
 
 namespace FriendlyPotato.Windows;
 
-public class LocatorWindow : Window, IDisposable
+public sealed class LocatorWindow : Window, IDisposable
 {
+    private const double HealthTrackInterval = 1.5;
     private readonly Configuration configuration;
+    private readonly Dictionary<uint, HealthTrack> healths = new();
 
     // We give this window a constant ID using ###
     // This allows for labels being dynamic, like "{FPS Counter}fps###XYZ counter window",
@@ -48,6 +51,8 @@ public class LocatorWindow : Window, IDisposable
 
             if (sRank.Distance < 0f) return;
 
+            var killTimeEstimate = EstimateKillTime(huntId, sRank.Health);
+
             var arrowImagePath = sRank.Type switch
             {
                 ObjectLocation.Variant.ARank => FriendlyPotato.AssetPath("purplearrow.png"),
@@ -64,15 +69,38 @@ public class LocatorWindow : Window, IDisposable
                 return;
             }
 
+            var estimatedTime = killTimeEstimate > 0 ? $"(est. {killTimeEstimate:F1}s)" : "";
+            var hp = sRank.Health < 100f ? $"{sRank.Health:F1}%%" : $"{sRank.Health:F0}%%";
             var flag = FriendlyPotato.PositionToFlag(sRank.Position);
             ImGui.Text($"{sRank.Name}");
             ImGui.Text($"(x {flag.X} , y {flag.Y}) {sRank.Distance:F1}y");
+            ImGui.Text($"HP {hp} {estimatedTime}");
             DrawImageRotated(texture, sRank.Angle);
             ImGui.Spacing();
         }
     }
 
-    private void DrawImageRotated(IDalamudTextureWrap texture, float angle)
+    private double EstimateKillTime(uint huntId, float currentHealth)
+    {
+        if (healths.TryGetValue(huntId, out var health))
+        {
+            if (DateTime.Now - health.When > TimeSpan.FromSeconds(HealthTrackInterval))
+                health.AddHealthDiff(currentHealth);
+        }
+        else
+        {
+            health = new HealthTrack
+            {
+                Health = currentHealth,
+                When = DateTime.Now
+            };
+            healths.Add(huntId, health);
+        }
+
+        return health.EstimatedKillTime();
+    }
+
+    private static void DrawImageRotated(IDalamudTextureWrap texture, float angle)
     {
         var drawList = ImGui.GetWindowDrawList();
 
@@ -103,5 +131,57 @@ public class LocatorWindow : Window, IDisposable
         drawList.AddImageQuad(texture.ImGuiHandle, vertices[0], vertices[1], vertices[2], vertices[3]);
 
         ImGui.Dummy(new Vector2(texture.Width, texture.Height));
+    }
+
+    private class HealthTrack
+    {
+        private const int TrackedWindows = 20;
+        private readonly float[] healthDifferences = new float[TrackedWindows];
+        private readonly TimeSpan[] healthTrackDurations = new TimeSpan[TrackedWindows];
+        private int filled;
+        public float Health;
+        public DateTime When;
+
+        public void AddHealthDiff(float newHealth)
+        {
+            if (newHealth > Health)
+            {
+                Health = newHealth;
+                When = DateTime.Now;
+                filled = 0;
+                return;
+            }
+
+            for (var i = filled - 1; i > 0; i--)
+            {
+                healthDifferences[i] = healthDifferences[i - 1];
+                healthTrackDurations[i] = healthTrackDurations[i - 1];
+            }
+
+            var diff = Health - newHealth;
+            var now = DateTime.Now;
+
+            healthDifferences[0] = diff;
+            healthTrackDurations[0] = now - When;
+            When = now;
+            Health = newHealth;
+            if (filled < TrackedWindows) filled++;
+        }
+
+        public double EstimatedKillTime()
+        {
+            var healthDifference = 0f;
+            var time = TimeSpan.Zero;
+            for (var i = 0; i < filled; i++)
+            {
+                healthDifference += healthDifferences[i];
+                time += healthTrackDurations[i];
+            }
+
+            if (healthDifference == 0f) return 0;
+
+            var timeToKill = Health / healthDifference * time.TotalMilliseconds / 1000f;
+            return timeToKill;
+        }
     }
 }

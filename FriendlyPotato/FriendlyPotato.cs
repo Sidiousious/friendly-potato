@@ -175,6 +175,11 @@ public sealed class FriendlyPotato : IDalamudPlugin
     private void Logout(int _, int __)
     {
         if (PlayerListWindow.IsOpen) PlayerListWindow.Toggle();
+        Framework.RunOnFrameworkThread(() =>
+        {
+            VisibleHunts = ImmutableList<uint>.Empty;
+            ObjectLocations = [];
+        });
     }
 
     private void FrameworkOnUpdateEvent(IFramework framework)
@@ -257,7 +262,8 @@ public sealed class FriendlyPotato : IDalamudPlugin
                 Distance = DistanceToTarget(mob),
                 Position = pos,
                 Name = mob.Name.TextValue,
-                Type = variant
+                Type = variant,
+                Health = 100f * mob.CurrentHp / mob.MaxHp
             };
             ObjectLocations[mob.DataId] = objLoc;
             visible.Add(mob.DataId);
@@ -511,7 +517,7 @@ public sealed class FriendlyPotato : IDalamudPlugin
         }
     }
 
-    private (uint[] SRanks, uint[] ARanks, uint[] BRanks) NotoriousMonsters()
+    private static (uint[] SRanks, uint[] ARanks, uint[] BRanks) NotoriousMonsters()
     {
         const byte sRank = 3;
         const byte aRank = 2;
