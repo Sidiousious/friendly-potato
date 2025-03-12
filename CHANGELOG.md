@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.10.1"></a>
+## 1.10.1 (2025-03-12)
+
+### Bug Fixes
+
+* refined estimated kill time
+
 <a name="1.10.0"></a>
 ## 1.10.0 (2025-03-12)
 
