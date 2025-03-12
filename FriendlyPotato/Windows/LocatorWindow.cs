@@ -69,7 +69,7 @@ public sealed class LocatorWindow : Window, IDisposable
                 return;
             }
 
-            var estimatedTime = killTimeEstimate > 0 ? $"(est. {killTimeEstimate:F1}s)" : "";
+            var estimatedTime = killTimeEstimate > 0 ? $"(est. {killTimeEstimate:F0}s)" : "";
             var hp = sRank.Health < 100f ? $"{sRank.Health:F1}%%" : $"{sRank.Health:F0}%%";
             var flag = FriendlyPotato.PositionToFlag(sRank.Position);
             ImGui.Text($"{sRank.Name}");
@@ -174,6 +174,12 @@ public sealed class LocatorWindow : Window, IDisposable
             var time = TimeSpan.Zero;
             for (var i = 0; i < filled; i++)
             {
+                if (i < TrackedWindows / 3)
+                {
+                    healthDifference += 3 * healthDifferences[i];
+                    time += 3 * healthTrackDurations[i];
+                }
+
                 healthDifference += healthDifferences[i];
                 time += healthTrackDurations[i];
             }
@@ -181,7 +187,7 @@ public sealed class LocatorWindow : Window, IDisposable
             if (healthDifference == 0f) return 0;
 
             var timeToKill = Health / healthDifference * time.TotalMilliseconds / 1000f;
-            return timeToKill;
+            return timeToKill - ((DateTime.Now - When).TotalMilliseconds / 1000f);
         }
     }
 }

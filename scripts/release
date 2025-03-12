@@ -40,5 +40,7 @@ cat << EOF > repository.json
 ]
 EOF
 
-aws s3 --profile kinkop cp out/FriendlyPotato/latest.zip s3://yfplugins/friendly-potato/$VERSION.zip
-aws s3 --profile kinkop cp repository.json s3://yfplugins/friendly-potato/repository.json
+#aws s3 --profile kinkop cp out/FriendlyPotato/latest.zip s3://yfplugins/friendly-potato/$VERSION.zip
+#aws s3 --profile kinkop cp repository.json s3://yfplugins/friendly-potato/repository.json
+s3cmd -c ~/.s3cfg-kinkop put out/FriendlyPotato/latest.zip s3://yfplugins/friendly-potato/$VERSION.zip
+s3cmd -c ~/.s3cfg-kinkop put repository.json s3://yfplugins/friendly-potato/repository.json
