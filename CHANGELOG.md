@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.11.0"></a>
+## 1.11.0 (2025-03-13)
+
+### Features
+
+* added optional background for hunt locator readability
+
+### Bug Fixes
+
+* greatly improved accuracy and styling of kill time estimate
+
 <a name="1.10.1"></a>
 ## 1.10.1 (2025-03-12)
 
