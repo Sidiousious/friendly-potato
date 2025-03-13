@@ -168,6 +168,14 @@ public class ConfigWindow : Window, IDisposable
             }
 
             ImGui.Spacing();
+            var locatorBackground = configuration.HuntLocatorBackgroundEnabled;
+            if (ImGui.Checkbox("Show locator background", ref locatorBackground))
+            {
+                configuration.HuntLocatorBackgroundEnabled = locatorBackground;
+                configuration.Save();
+            }
+
+            ImGui.Spacing();
             var chatLocator = configuration.ChatLocatorEnabled;
             if (ImGui.Checkbox("Show S rank flags in chat", ref chatLocator))
             {

@@ -22,7 +22,6 @@ public sealed class LocatorWindow : Window, IDisposable
     {
         Flags = ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoBackground;
         SizeCondition = ImGuiCond.Always;
-        Size = new Vector2(300f, 600f);
         PositionCondition = ImGuiCond.Always;
         configuration = plugin.Configuration;
     }
@@ -39,6 +38,12 @@ public sealed class LocatorWindow : Window, IDisposable
         Position = screenPos + new Vector2(screenSize.X / 2, screenSize.Y / 2) + new Vector2(
                        screenSize.X / 100 * configuration.LocatorOffsetX / 2,
                        screenSize.Y / 100 * configuration.LocatorOffsetY / 2);
+        // Minimum width to fit: Sanu Vali of Dancing Wings
+        Size = new Vector2(185f, 200f * FriendlyPotato.VisibleHunts.Count);
+        if (configuration.HuntLocatorBackgroundEnabled && FriendlyPotato.VisibleHunts.Count > 0)
+            Flags &= ~ImGuiWindowFlags.NoBackground;
+        else
+            Flags |= ImGuiWindowFlags.NoBackground;
     }
 
     public override void Draw()
