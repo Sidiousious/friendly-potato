@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Interface.Utility;
+using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 
@@ -10,9 +11,13 @@ namespace FriendlyPotato.Windows;
 
 public sealed class LocatorWindow : Window, IDisposable
 {
-    private const double HealthTrackInterval = 1.5;
+    private const double HealthTrackInterval = 1;
     private readonly Configuration configuration;
+
+    private readonly Vector4 green = new(0f, 0.7f, 0f, 1f);
     private readonly Dictionary<uint, HealthTrack> healths = new();
+    private readonly Vector4 red = new(0.7f, 0f, 0f, 1f);
+    private readonly Vector4 yellow = new(0.7f, 0.7f, 0f, 1f);
 
     // We give this window a constant ID using ###
     // This allows for labels being dynamic, like "{FPS Counter}fps###XYZ counter window",
@@ -50,6 +55,12 @@ public sealed class LocatorWindow : Window, IDisposable
     {
         if (!configuration.ShowHuntLocator) return;
 
+        if (FriendlyPotato.VisibleHunts.Count == 0)
+        {
+            healths.Clear();
+            return;
+        }
+
         foreach (var huntId in FriendlyPotato.VisibleHunts)
         {
             if (!FriendlyPotato.ObjectLocations.TryGetValue(huntId, out var sRank)) continue;
@@ -79,7 +90,17 @@ public sealed class LocatorWindow : Window, IDisposable
             var flag = FriendlyPotato.PositionToFlag(sRank.Position);
             ImGui.Text($"{sRank.Name}");
             ImGui.Text($"(x {flag.X} , y {flag.Y}) {sRank.Distance:F1}y");
-            ImGui.Text($"HP {hp} {estimatedTime}");
+            using (ImRaii.PushColor(ImGuiCol.Text, killTimeEstimate switch
+                   {
+                       0 => green,
+                       < 10 => red,
+                       < 30 => yellow,
+                       _ => green
+                   }))
+            {
+                ImGui.Text($"HP {hp} {estimatedTime}");
+            }
+
             DrawImageRotated(texture, sRank.Angle);
             ImGui.Spacing();
         }
@@ -140,7 +161,7 @@ public sealed class LocatorWindow : Window, IDisposable
 
     private class HealthTrack
     {
-        private const int TrackedWindows = 20;
+        private const int TrackedWindows = 35;
         private readonly float[] healthDifferences = new float[TrackedWindows];
         private readonly TimeSpan[] healthTrackDurations = new TimeSpan[TrackedWindows];
         private int filled;
@@ -149,7 +170,7 @@ public sealed class LocatorWindow : Window, IDisposable
 
         public void AddHealthDiff(float newHealth)
         {
-            if (newHealth > Health)
+            if (newHealth > Health || newHealth > 99.99f)
             {
                 Health = newHealth;
                 When = DateTime.Now;
@@ -179,20 +200,22 @@ public sealed class LocatorWindow : Window, IDisposable
             var time = TimeSpan.Zero;
             for (var i = 0; i < filled; i++)
             {
-                if (i < TrackedWindows / 3)
+                var multiplier = time.TotalMilliseconds switch
                 {
-                    healthDifference += 3 * healthDifferences[i];
-                    time += 3 * healthTrackDurations[i];
-                }
+                    < 8000 => 4,
+                    < 15000 => 3,
+                    _ => 1
+                };
 
-                healthDifference += healthDifferences[i];
-                time += healthTrackDurations[i];
+                healthDifference += multiplier * healthDifferences[i];
+                time += multiplier * healthTrackDurations[i];
             }
 
             if (healthDifference == 0f) return 0;
 
             var timeToKill = Health / healthDifference * time.TotalMilliseconds / 1000f;
-            return timeToKill - ((DateTime.Now - When).TotalMilliseconds / 1000f);
+            var timeSinceLastInterval = (DateTime.Now - When).TotalMilliseconds / 1000f;
+            return timeToKill - timeSinceLastInterval;
         }
     }
 }
