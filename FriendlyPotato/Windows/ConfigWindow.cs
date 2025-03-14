@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Numerics;
+using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 
@@ -209,32 +210,35 @@ public class ConfigWindow : Window, IDisposable
 
             ImGui.Spacing();
 
-            var offsetX = configuration.LocatorOffsetX;
-            if (ImGui.InputFloat("Locator X offset", ref offsetX))
+            using (ImRaii.ItemWidth(100f))
             {
-                offsetX = offsetX switch
+                var offsetX = configuration.LocatorOffsetX;
+                if (ImGui.InputFloat("Locator X offset", ref offsetX))
                 {
-                    < -70 => -70,
-                    > 70 => 70,
-                    _ => offsetX
-                };
+                    offsetX = offsetX switch
+                    {
+                        < -70 => -70,
+                        > 70 => 70,
+                        _ => offsetX
+                    };
 
-                configuration.LocatorOffsetX = offsetX;
-                configuration.Save();
-            }
+                    configuration.LocatorOffsetX = offsetX;
+                    configuration.Save();
+                }
 
-            var offsetY = configuration.LocatorOffsetY;
-            if (ImGui.InputFloat("Locator Y offset", ref offsetY))
-            {
-                offsetY = offsetY switch
+                var offsetY = configuration.LocatorOffsetY;
+                if (ImGui.InputFloat("Locator Y offset", ref offsetY))
                 {
-                    < -70 => -70,
-                    > 70 => 70,
-                    _ => offsetY
-                };
+                    offsetY = offsetY switch
+                    {
+                        < -70 => -70,
+                        > 70 => 70,
+                        _ => offsetY
+                    };
 
-                configuration.LocatorOffsetY = offsetY;
-                configuration.Save();
+                    configuration.LocatorOffsetY = offsetY;
+                    configuration.Save();
+                }
             }
 
             ImGui.Spacing();
@@ -253,10 +257,13 @@ public class ConfigWindow : Window, IDisposable
             ImGui.Spacing();
 
             var inactivityThreshold = configuration.InactivityThreshold;
-            if (ImGui.InputInt("Days unseen before highlight", ref inactivityThreshold))
+            using (ImRaii.ItemWidth(100f))
             {
-                configuration.InactivityThreshold = inactivityThreshold;
-                configuration.Save();
+                if (ImGui.InputInt("Days unseen before highlight", ref inactivityThreshold))
+                {
+                    configuration.InactivityThreshold = inactivityThreshold;
+                    configuration.Save();
+                }
             }
 
             ImGui.Spacing();
