@@ -240,6 +240,28 @@ public class ConfigWindow : Window, IDisposable
             ImGui.Spacing();
         }
 
+        if (ImGui.CollapsingHeader("Linkshell Activity Tracker Settings"))
+        {
+            ImGui.Spacing();
+            var highlightEnabled = configuration.HighlightInactive;
+            if (ImGui.Checkbox("Highlight potentially inactive users", ref highlightEnabled))
+            {
+                configuration.HighlightInactive = highlightEnabled;
+                configuration.Save();
+            }
+
+            ImGui.Spacing();
+
+            var inactivityThreshold = configuration.InactivityThreshold;
+            if (ImGui.InputInt("Days unseen before highlight", ref inactivityThreshold))
+            {
+                configuration.InactivityThreshold = inactivityThreshold;
+                configuration.Save();
+            }
+
+            ImGui.Spacing();
+        }
+
         if (ImGui.CollapsingHeader("Debug Settings"))
         {
 #if DEBUG

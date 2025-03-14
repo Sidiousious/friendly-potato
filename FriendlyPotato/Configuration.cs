@@ -34,6 +34,10 @@ public class Configuration : IPluginConfiguration
     public float LocatorOffsetX { get; set; } = -20;
     public float LocatorOffsetY { get; set; } = 15;
 
+    // (CW)LS tracking
+    public bool HighlightInactive { get; set; } = false;
+    public int InactivityThreshold { get; set; } = 14;
+
     // Debug
     public bool DebugList { get; set; } = false;
     public bool DebugStatuses { get; set; } = false;

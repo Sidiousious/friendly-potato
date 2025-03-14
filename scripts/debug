@@ -6,7 +6,7 @@ cp ./FriendlyPotato/bin/x64/Debug/FriendlyPotato.json ~/.xlcore/protonprefix/dri
 sed -i 's/"friendly-potato"/"friendly-potato-dev"/g' ~/.xlcore/protonprefix/drive_c/FriendlyPotato.json
 cp ./FriendlyPotato/bin/x64/Debug/FriendlyPotato.dll ~/.xlcore/protonprefix/drive_c/FriendlyPotato.dll
 
-dotnet build -c Release --output ./out
+dotnet build --output ./out
 set VERSION (ls -t ~/.xlcore/installedPlugins/FriendlyPotato | head -n 1)
 rsync -a ./out/ ~/.xlcore/installedPlugins/FriendlyPotato/$VERSION/
 

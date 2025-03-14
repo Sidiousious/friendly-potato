@@ -7,6 +7,7 @@ using System.Linq;
 using System.Numerics;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.ClientState.Objects.Enums;
@@ -14,21 +15,27 @@ using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui.Dtr;
+using Dalamud.Game.Network;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
+using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using FFXIVClientStructs.FFXIV.Client.Graphics;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using FFXIVClientStructs.FFXIV.Client.UI.Info;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using FriendlyPotato.Windows;
 using Lumina.Excel.Sheets;
 
 namespace FriendlyPotato;
 
 // ReSharper disable once ClassNeverInstantiated.Global - instantiated by Dalamud
-public sealed class FriendlyPotato : IDalamudPlugin
+public sealed partial class FriendlyPotato : IDalamudPlugin
 {
     private const string CommandName = "/friendlypotato";
     private const string DebugCommandName = "/fpotdbg";
@@ -47,11 +54,14 @@ public sealed class FriendlyPotato : IDalamudPlugin
     private readonly Payload doomedIcon = new IconPayload(BitmapFontIcon.OrangeDiamond);
     private readonly Payload dtrSeparator = new TextPayload("  ");
     private readonly Payload friendIcon = new IconPayload(BitmapFontIcon.Returner);
+
+    private readonly ByteColor highlightColor = new() { R = 240, G = 0, B = 0, A = 155 };
     private readonly Payload offWorldIcon = new IconPayload(BitmapFontIcon.CrossWorld);
     private readonly Payload playerIcon = new IconPayload(BitmapFontIcon.AnyClass);
 
     private readonly PlayerInformation playerInformation = new();
     private readonly uint[] sRanks;
+    private readonly ByteColor unknownHighlightColor = new() { R = 240, G = 240, B = 50, A = 155 };
 
     public readonly Version Version = Assembly.GetExecutingAssembly().GetName().Version!;
     private readonly Payload weesIcon = new IconPayload(BitmapFontIcon.Meteor);
@@ -80,6 +90,8 @@ public sealed class FriendlyPotato : IDalamudPlugin
             HelpMessage = "Print some info in debug log"
         });
 
+        RuntimeData = new RuntimeDataManager(PluginInterface, PluginLog);
+
         PluginInterface.UiBuilder.Draw += DrawUi;
         PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUi;
         PluginInterface.UiBuilder.OpenMainUi += PlayerListWindow.Toggle;
@@ -104,13 +116,36 @@ public sealed class FriendlyPotato : IDalamudPlugin
         sRanks = hunts.SRanks;
         aRanks = hunts.ARanks;
         bRanks = hunts.BRanks;
+
+        GameNetwork.NetworkMessage += (ptr, code, id, actorId, direction) =>
+        {
+            if (Configuration.DebugList)
+                PluginLog.Debug($"ptr {ptr} - code {code}  - id {id} - actorId {actorId} - direction {direction}");
+            if (direction == NetworkMessageDirection.ZoneDown)
+            {
+                switch (code)
+                {
+                    case 876: // Local linkshell list download
+                        Framework.RunOnTick(ProcessLinkshellUsers, TimeSpan.FromMilliseconds(100));
+                        break;
+                    case 849: // CWLS list download
+                        Framework.RunOnTick(ProcessCrossworldLinkshellUsers, TimeSpan.FromMilliseconds(100));
+                        break;
+                }
+            }
+        };
     }
+
+    public static RuntimeDataManager RuntimeData { get; private set; } = null!;
 
     public static ConcurrentDictionary<uint, ObjectLocation> ObjectLocations { get; private set; } = [];
     public static ImmutableList<uint> VisibleHunts { get; private set; } = ImmutableList<uint>.Empty;
 
     [PluginService]
     internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
+
+    [PluginService]
+    internal static IGameNetwork GameNetwork { get; private set; } = null!;
 
     [PluginService]
     internal static ICommandManager CommandManager { get; private set; } = null!;
@@ -144,6 +179,9 @@ public sealed class FriendlyPotato : IDalamudPlugin
 
     [PluginService]
     internal static IDataManager DataManager { get; private set; } = null!;
+
+    [PluginService]
+    internal static IGameGui GameGui { get; private set; } = null!;
 
     public Configuration Configuration { get; init; }
     private ConfigWindow ConfigWindow { get; init; }
@@ -192,6 +230,8 @@ public sealed class FriendlyPotato : IDalamudPlugin
         if (!LocatorWindow.IsOpen) LocatorWindow.Toggle();
 
         UpdateVisibleHunts();
+        HighlightLinkshellUsers();
+        HighlightCrossworldLinkshellUsers();
     }
 
     private void UpdateVisibleHunts()
@@ -303,6 +343,10 @@ public sealed class FriendlyPotato : IDalamudPlugin
                                         {
                                             Character = p
                                         }).ToImmutableList();
+        foreach (var player in playerInformation.Players)
+            RuntimeData.MarkSeen(
+                $"{player.Character.Name.TextValue}@{player.Character.HomeWorld.Value.Name.ToDalamudString().TextValue}",
+                false);
         UpdatePlayerTypes();
     }
 
@@ -511,6 +555,8 @@ public sealed class FriendlyPotato : IDalamudPlugin
 
         PluginLog.Debug($"Visible Hunts: {string.Join(", ", VisibleHunts)}");
 
+        PluginLog.Debug($"Config dir: {PluginInterface.GetPluginConfigDirectory()}");
+
         unsafe
         {
             PluginLog.Debug($"Currently in instance: {UIState.Instance()->PublicInstance.InstanceId}");
@@ -541,4 +587,155 @@ public sealed class FriendlyPotato : IDalamudPlugin
     {
         ConfigWindow.Toggle();
     }
+
+    private static unsafe void ProcessCrossworldLinkshellUsers()
+    {
+        if (InfoProxyCrossWorldLinkshell.Instance() == null ||
+            AgentCrossWorldLinkshell.Instance() == null ||
+            InfoProxyCrossWorldLinkshellMember.Instance() == null)
+        {
+            PluginLog.Debug("Called to log cwls users but an instance was null");
+            return;
+        }
+
+        foreach (var c in InfoProxyCrossWorldLinkshellMember.Instance()->CharDataSpan)
+        {
+            var charName = CharacterFullName(c);
+            Framework.Run(() =>
+            {
+                if (c.State != InfoProxyCommonList.CharacterData.OnlineStatus.Offline) RuntimeData.MarkSeen(charName);
+            });
+        }
+    }
+
+    private static unsafe string? FindCurrentCrossworldLinkshellUser(string who)
+    {
+        if (InfoProxyCrossWorldLinkshellMember.Instance() == null)
+        {
+            PluginLog.Debug("Called to log cwls users but an instance was null");
+            return null;
+        }
+
+        foreach (var c in InfoProxyCrossWorldLinkshellMember.Instance()->CharDataSpan)
+            if (c.NameString == who)
+                return CharacterFullName(c);
+
+        return null;
+    }
+
+    private static unsafe void ProcessLinkshellUsers()
+    {
+        if (InfoProxyLinkshell.Instance() == null || InfoProxyLinkshellMember.Instance() == null ||
+            AgentLinkshell.Instance() == null)
+        {
+            PluginLog.Debug("Called to log linkshell users but an instance was null");
+            return;
+        }
+
+        foreach (var c in InfoProxyLinkshellMember.Instance()->CharDataSpan)
+        {
+            var charName = CharacterFullName(c);
+            Framework.Run(() =>
+            {
+                if (c.State != InfoProxyCommonList.CharacterData.OnlineStatus.Offline) RuntimeData.MarkSeen(charName);
+            });
+        }
+    }
+
+    private unsafe void HighlightCrossworldLinkshellUsers()
+    {
+        if (!Configuration.HighlightInactive) return;
+
+        var lsAddonPtr = GameGui.GetAddonByName("CrossWorldLinkshell");
+        if (lsAddonPtr == nint.Zero) return;
+
+        var lsAddon = (AtkUnitBase*)lsAddonPtr;
+        var componentList = lsAddon->GetComponentListById(33);
+        if (componentList == null) return;
+
+        foreach (nint i in Enumerable.Range(0, componentList->ListLength))
+        {
+            var renderer = componentList->ItemRendererList[i].AtkComponentListItemRenderer;
+            if (renderer == null) continue;
+
+            var text = (AtkTextNode*)renderer->GetTextNodeById(5);
+            if (text == null) continue;
+
+            var name = SeString.Parse(text->GetText()).TextValue;
+            if (name.StartsWith('(')) continue;
+            var runtimeDataName = FindCurrentCrossworldLinkshellUser(NameIconStripper().Replace(name, ""));
+            if (runtimeDataName == null) continue;
+
+            var lastSeen =
+                RuntimeData.LastSeen(runtimeDataName);
+            double days = -1;
+            if (lastSeen != null) days = (DateTime.Now - lastSeen.Value).TotalDays;
+
+            if (days < 0)
+            {
+                text->TextColor = unknownHighlightColor;
+                text->SetText($"{name}");
+            }
+            else if (days >= Configuration.InactivityThreshold)
+            {
+                text->TextColor = highlightColor;
+                text->SetText($"({days:F0}d) {name}");
+            }
+        }
+    }
+
+    private unsafe void HighlightLinkshellUsers()
+    {
+        if (!Configuration.HighlightInactive) return;
+
+        var lsAddonPtr = GameGui.GetAddonByName("LinkShell");
+        if (lsAddonPtr == nint.Zero) return;
+
+        var lsAddon = (AtkUnitBase*)lsAddonPtr;
+        var componentList = lsAddon->GetComponentListById(22);
+        if (componentList == null) return;
+
+        foreach (nint i in Enumerable.Range(0, componentList->ListLength))
+        {
+            var renderer = componentList->ItemRendererList[i].AtkComponentListItemRenderer;
+            if (renderer == null) continue;
+
+            var text = (AtkTextNode*)renderer->GetTextNodeById(5);
+            if (text == null) continue;
+
+            var name = SeString.Parse(text->GetText()).TextValue;
+            if (name.StartsWith('(')) continue;
+            var compareName = NameIconStripper().Replace(name, "");
+
+            var lastSeen =
+                RuntimeData.LastSeen(
+                    $"{compareName}@{ClientState.LocalPlayer?.HomeWorld.Value.Name.ToDalamudString().TextValue}");
+            double days = -1;
+            if (lastSeen != null) days = (DateTime.Now - lastSeen.Value).TotalDays;
+
+            if (days < 0)
+            {
+                text->TextColor = unknownHighlightColor;
+                text->SetText($"{name}");
+            }
+            else if (days >= Configuration.InactivityThreshold)
+            {
+                text->TextColor = highlightColor;
+                text->SetText($"({days:F0}d) {name}");
+            }
+        }
+    }
+
+    private static string CharacterFullName(InfoProxyCommonList.CharacterData c)
+    {
+        return $"{c.NameString}@{HomeWorldName(c.HomeWorld)}";
+    }
+
+    private static string HomeWorldName(uint id)
+    {
+        return DataManager.GetExcelSheet<World>().First(w => w.RowId == id).Name.ToDalamudString().TextValue;
+    }
+
+    [GeneratedRegex(@"^[^A-Z']")]
+    private static partial Regex NameIconStripper();
 }
