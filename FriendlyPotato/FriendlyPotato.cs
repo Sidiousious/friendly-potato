@@ -125,10 +125,10 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
             {
                 switch (code)
                 {
-                    case 876: // Local linkshell list download
+                    case 619: // Local linkshell list download
                         Framework.RunOnTick(ProcessLinkshellUsers, TimeSpan.FromMilliseconds(100));
                         break;
-                    case 849: // CWLS list download
+                    case 819: // CWLS list download
                         Framework.RunOnTick(ProcessCrossworldLinkshellUsers, TimeSpan.FromMilliseconds(100));
                         break;
                 }
@@ -601,6 +601,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         foreach (var c in InfoProxyCrossWorldLinkshellMember.Instance()->CharDataSpan)
         {
             var charName = CharacterFullName(c);
+            PluginLog.Debug($"Found cw linkshell user: {charName}");
             Framework.Run(() =>
             {
                 if (c.State != InfoProxyCommonList.CharacterData.OnlineStatus.Offline) RuntimeData.MarkSeen(charName);
@@ -635,6 +636,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         foreach (var c in InfoProxyLinkshellMember.Instance()->CharDataSpan)
         {
             var charName = CharacterFullName(c);
+            PluginLog.Debug($"Found linkshell user: {charName}");
             Framework.Run(() =>
             {
                 if (c.State != InfoProxyCommonList.CharacterData.OnlineStatus.Offline) RuntimeData.MarkSeen(charName);
@@ -661,7 +663,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
             var text = (AtkTextNode*)renderer->GetTextNodeById(5);
             if (text == null) continue;
 
-            var name = SeString.Parse(text->GetText()).TextValue;
+            var name = SeString.Parse(text->GetText().Value).TextValue;
             if (name.StartsWith('(')) continue;
             var runtimeDataName = FindCurrentCrossworldLinkshellUser(NameIconStripper().Replace(name, ""));
             if (runtimeDataName == null) continue;
@@ -703,7 +705,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
             var text = (AtkTextNode*)renderer->GetTextNodeById(5);
             if (text == null) continue;
 
-            var name = SeString.Parse(text->GetText()).TextValue;
+            var name = SeString.Parse(text->GetText().Value).TextValue;
             if (name.StartsWith('(')) continue;
             var compareName = NameIconStripper().Replace(name, "");
 

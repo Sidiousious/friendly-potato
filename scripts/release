@@ -26,7 +26,7 @@ cat << EOF > repository.json
       "Hunt",
       "Information"
     ],
-    "DalamudApiLevel": 11,
+    "DalamudApiLevel": 12,
     "LoadPriority": 0,
     "DownloadCount": 69,
     "IconUrl": "https://yfplugins.kinkop.eu/friendlypotatologo.png",
