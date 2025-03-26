@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 
@@ -13,6 +15,15 @@ public class PlayerInformation
     public int Wees { get; set; }
     public int Raised { get; set; }
     public ImmutableList<PlayerCharacterDetails> Players { get; set; } = [];
+    public ConcurrentDictionary<string, DateTime> SeenHistory { get; } = new();
+
+    public void ClearOld()
+    {
+        var old = SeenHistory.Keys.ToImmutableArray();
+        foreach (var k in old)
+            if (SeenHistory.TryGetValue(k, out var date) && DateTime.Now - date > TimeSpan.FromSeconds(30))
+                SeenHistory.TryRemove(k, out _);
+    }
 }
 
 public enum PlayerCharacterKind

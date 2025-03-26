@@ -344,9 +344,17 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
                                             Character = p
                                         }).ToImmutableList();
         foreach (var player in playerInformation.Players)
+        {
+            var nameKey =
+                $"{player.Character.Name.TextValue}@{player.Character.HomeWorld.Value.Name.ToDalamudString().TextValue}";
             RuntimeData.MarkSeen(
-                $"{player.Character.Name.TextValue}@{player.Character.HomeWorld.Value.Name.ToDalamudString().TextValue}",
+                nameKey,
                 false);
+            playerInformation.SeenHistory[nameKey] = DateTime.Now;
+        }
+
+        playerInformation.ClearOld();
+
         UpdatePlayerTypes();
     }
 

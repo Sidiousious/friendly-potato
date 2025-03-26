@@ -64,7 +64,8 @@ public class PlayerListWindow : Window, IDisposable
             if (configuration.ListTotalEnabled)
             {
                 InlineIcon(FontAwesomeIcon.User, "Total players nearby");
-                ImGui.Text(playerInformation.Total.ToString());
+                var historical = $" (~{playerInformation.SeenHistory.Count})";
+                ImGui.Text($"{playerInformation.Total}{(playerInformation.Total > 40 ? historical : "")}");
                 ImGui.SameLine();
             }
 
