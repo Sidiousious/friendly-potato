@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.13.0"></a>
+## 1.13.0 (2025-03-26)
+
+### Features
+
+* show approximate nearby count in congested locations based on number of distinct characters seen in the last 30 seconds
+
+### Bug Fixes
+
+* updated for api12
+
 <a name="1.12.1"></a>
 ## 1.12.1 (2025-03-14)
 
