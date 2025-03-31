@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.13.1"></a>
+## 1.13.1 (2025-03-31)
+
+### Bug Fixes
+
+* updated network opcodes for 7.2hotfix1
+
 <a name="1.13.0"></a>
 ## 1.13.0 (2025-03-26)
 
