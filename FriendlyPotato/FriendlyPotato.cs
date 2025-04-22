@@ -125,10 +125,10 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
             {
                 switch (code)
                 {
-                    case 651: // Local linkshell list download
+                    case 680: // Local linkshell list download
                         Framework.RunOnTick(ProcessLinkshellUsers, TimeSpan.FromMilliseconds(100));
                         break;
-                    case 981: // CWLS list download
+                    case 912: // CWLS list download
                         Framework.RunOnTick(ProcessCrossworldLinkshellUsers, TimeSpan.FromMilliseconds(100));
                         break;
                 }
@@ -338,18 +338,16 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         EnsureIsOnFramework();
         playerInformation.Players = ObjectTable
                                     .Skip(1).OfType<IPlayerCharacter>()
-                                    .Where(p => !string.IsNullOrEmpty(p.Name.TextValue)).Select(
-                                        p => new PlayerCharacterDetails
-                                        {
-                                            Character = p
-                                        }).ToImmutableList();
+                                    .Where(p => !string.IsNullOrEmpty(p.Name.TextValue))
+                                    .Select(p => new PlayerCharacterDetails
+                                    {
+                                        Character = p
+                                    }).ToImmutableList();
         foreach (var player in playerInformation.Players)
         {
             var nameKey =
                 $"{player.Character.Name.TextValue}@{player.Character.HomeWorld.Value.Name.ToDalamudString().TextValue}";
-            RuntimeData.MarkSeen(
-                nameKey,
-                false);
+            RuntimeData.MarkSeen(nameKey, false);
             playerInformation.SeenHistory[nameKey] = DateTime.Now;
         }
 

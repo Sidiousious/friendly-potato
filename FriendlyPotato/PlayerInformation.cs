@@ -19,6 +19,12 @@ public class PlayerInformation
 
     public void ClearOld()
     {
+        if (Players.Count < 30)
+        {
+            SeenHistory.Clear();
+            return;
+        }
+
         var old = SeenHistory.Keys.ToImmutableArray();
         foreach (var k in old)
             if (SeenHistory.TryGetValue(k, out var date) && DateTime.Now - date > TimeSpan.FromSeconds(30))
