@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Interface.Utility;
@@ -37,6 +38,8 @@ public sealed class LocatorWindow : Window, IDisposable
     {
         base.PreDraw();
 
+        var fateCount = configuration.FateLocatorEnabled ? FriendlyPotato.VisibleFates.Count : 0;
+        var arrowCount = FriendlyPotato.VisibleHunts.Count + fateCount;
         var screenPos = ImGuiHelpers.MainViewport.Pos;
         var screenSize = ImGuiHelpers.MainViewport.Size;
         PositionCondition = ImGuiCond.Always;
@@ -44,8 +47,8 @@ public sealed class LocatorWindow : Window, IDisposable
                        screenSize.X / 100 * configuration.LocatorOffsetX / 2,
                        screenSize.Y / 100 * configuration.LocatorOffsetY / 2);
         // Minimum width to fit: Sanu Vali of Dancing Wings
-        Size = new Vector2(185f, 200f * FriendlyPotato.VisibleHunts.Count);
-        if (configuration.HuntLocatorBackgroundEnabled && FriendlyPotato.VisibleHunts.Count > 0)
+        Size = new Vector2(185f, 200f * arrowCount);
+        if (configuration.HuntLocatorBackgroundEnabled && arrowCount > 0)
             Flags &= ~ImGuiWindowFlags.NoBackground;
         else
             Flags |= ImGuiWindowFlags.NoBackground;
@@ -55,24 +58,29 @@ public sealed class LocatorWindow : Window, IDisposable
     {
         if (!configuration.ShowHuntLocator) return;
 
-        if (FriendlyPotato.VisibleHunts.Count == 0)
+        var visible = new List<uint>(FriendlyPotato.VisibleHunts);
+        if (configuration.FateLocatorEnabled)
+            visible.AddRange(FriendlyPotato.VisibleFates.Select(fId => fId + FriendlyPotato.FateOffset));
+
+        if (visible.Count == 0)
         {
             healths.Clear();
             return;
         }
 
-        foreach (var huntId in FriendlyPotato.VisibleHunts)
+        foreach (var id in visible)
         {
-            if (!FriendlyPotato.ObjectLocations.TryGetValue(huntId, out var sRank)) continue;
+            if (!FriendlyPotato.ObjectLocations.TryGetValue(id, out var obj)) continue;
 
-            if (sRank.Distance < 0f) return;
+            if (obj.Distance < 0f) return;
 
-            var killTimeEstimate = EstimateKillTime(huntId, sRank.Health);
+            var killTimeEstimate = EstimateKillTime(id, obj.Health);
 
-            var arrowImagePath = sRank.Type switch
+            var arrowImagePath = obj.Type switch
             {
                 ObjectLocation.Variant.ARank => FriendlyPotato.AssetPath("purplearrow.png"),
                 ObjectLocation.Variant.BRank => FriendlyPotato.AssetPath("bluearrow.png"),
+                ObjectLocation.Variant.Fate => FriendlyPotato.AssetPath("greenarrow.png"),
                 _ => FriendlyPotato.AssetPath("arrow.png")
             };
 
@@ -86,10 +94,10 @@ public sealed class LocatorWindow : Window, IDisposable
             }
 
             var estimatedTime = killTimeEstimate > 0 ? $"(est. {killTimeEstimate:F0}s)" : "";
-            var hp = sRank.Health < 100f ? $"{sRank.Health:F1}%%" : $"{sRank.Health:F0}%%";
-            var flag = FriendlyPotato.PositionToFlag(sRank.Position);
-            ImGui.Text($"{sRank.Name}");
-            ImGui.Text($"(x {flag.X} , y {flag.Y}) {sRank.Distance:F1}y");
+            var hp = obj.Health < 100f ? $"{obj.Health:F1}%%" : $"{obj.Health:F0}%%";
+            var flag = FriendlyPotato.PositionToFlag(obj.Position);
+            ImGui.Text($"{DurationString(obj.Duration)}{obj.Name}");
+            ImGui.Text($"(x {flag.X} , y {flag.Y}) {obj.Distance:F1}y");
             using (ImRaii.PushColor(ImGuiCol.Text, killTimeEstimate switch
                    {
                        0 => green,
@@ -101,11 +109,19 @@ public sealed class LocatorWindow : Window, IDisposable
                 ImGui.Text($"HP {hp} {estimatedTime}");
             }
 
-            if (sRank.Target is not null) ImGui.Text($"-> {sRank.Target}");
+            if (obj.Target is not null) ImGui.Text($"-> {obj.Target}");
 
-            DrawImageRotated(texture, sRank.Angle);
+            DrawImageRotated(texture, obj.Angle);
             ImGui.Spacing();
         }
+    }
+
+    private static string DurationString(long duration)
+    {
+        if (duration < 0) return "";
+        var minutes = Math.Round(duration / 60f);
+        var seconds = Math.Round(duration % 60f);
+        return $"{minutes:00}:{seconds:00} | ";
     }
 
     private double EstimateKillTime(uint huntId, float currentHealth)

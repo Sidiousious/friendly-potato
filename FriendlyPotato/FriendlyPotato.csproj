@@ -21,6 +21,10 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>false</Visible>
         </Content>
+        <Content Include="..\Data\greenarrow.png">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Visible>false</Visible>
+        </Content>
     </ItemGroup>
 
     <ItemGroup>

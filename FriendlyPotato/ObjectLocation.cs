@@ -1,4 +1,5 @@
 using System.Numerics;
+using Dalamud.Game.ClientState.Objects.Enums;
 
 namespace FriendlyPotato;
 
@@ -8,7 +9,8 @@ public class ObjectLocation
     {
         SRank,
         ARank,
-        BRank
+        BRank,
+        Fate
     }
 
     public float Angle { get; init; } = -1000f;
@@ -18,4 +20,6 @@ public class ObjectLocation
     public Variant Type { get; init; } = Variant.SRank;
     public float Health { get; init; } = -1f;
     public string? Target { get; init; } = null;
+    public StatusFlags Status { get; init; } = 0;
+    public long Duration { get; init; } = -1;
 }

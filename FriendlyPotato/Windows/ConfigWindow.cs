@@ -158,11 +158,11 @@ public class ConfigWindow : Window, IDisposable
             ImGui.Spacing();
         }
 
-        if (ImGui.CollapsingHeader("Hunt Locator Settings"))
+        if (ImGui.CollapsingHeader("Locator Settings"))
         {
             ImGui.Spacing();
             var huntLocator = configuration.ShowHuntLocator;
-            if (ImGui.Checkbox("Show hunt locator", ref huntLocator))
+            if (ImGui.Checkbox("Show locator", ref huntLocator))
             {
                 configuration.ShowHuntLocator = huntLocator;
                 configuration.Save();
@@ -178,17 +178,17 @@ public class ConfigWindow : Window, IDisposable
 
             ImGui.Spacing();
             var pingOnPull = configuration.PingOnPull;
-            if (ImGui.Checkbox("Play notification sound on pull", ref pingOnPull))
+            if (ImGui.Checkbox("Play notification sound on hunt mark pull", ref pingOnPull))
             {
                 configuration.PingOnPull = pingOnPull;
                 configuration.Save();
             }
 
             ImGui.Spacing();
-            var chatLocator = configuration.ChatLocatorEnabled;
+            var chatLocator = configuration.SChatLocatorEnabled;
             if (ImGui.Checkbox("Show S rank flags in chat", ref chatLocator))
             {
-                configuration.ChatLocatorEnabled = chatLocator;
+                configuration.SChatLocatorEnabled = chatLocator;
                 configuration.Save();
             }
 
@@ -213,6 +213,30 @@ public class ConfigWindow : Window, IDisposable
             if (ImGui.Checkbox("Play notification sound on A spawn", ref aSound))
             {
                 configuration.ARankSoundEnabled = aSound;
+                configuration.Save();
+            }
+
+            ImGui.Spacing();
+            var fateEnabled = configuration.FateLocatorEnabled;
+            if (ImGui.Checkbox("Show Fate locator", ref fateEnabled))
+            {
+                configuration.FateLocatorEnabled = fateEnabled;
+                configuration.Save();
+            }
+
+            ImGui.Spacing();
+            var fateSound = configuration.FateSoundEnabled;
+            if (ImGui.Checkbox("Play notification sound on Fate spawn", ref fateSound))
+            {
+                configuration.FateSoundEnabled = fateSound;
+                configuration.Save();
+            }
+
+            ImGui.Spacing();
+            var fateChat = configuration.FateChatEnabled;
+            if (ImGui.Checkbox("Show Fates in chat", ref fateChat))
+            {
+                configuration.FateChatEnabled = fateChat;
                 configuration.Save();
             }
 

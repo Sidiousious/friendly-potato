@@ -1,15 +1,14 @@
 using System;
 using System.Numerics;
-using Dalamud.Game.ClientState.Objects.Types;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 
 namespace FriendlyPotato;
 
 public static class CameraAngles
 {
-    public static double AngleToTarget(IGameObject gameObject, double aimAngle)
+    public static double AngleToTarget(Vector3 pos, double aimAngle)
     {
-        var dirVector3 = FriendlyPotato.ClientState.LocalPlayer!.Position - gameObject.Position;
+        var dirVector3 = FriendlyPotato.ClientState.LocalPlayer!.Position - pos;
         var dirVector = Vector2.Normalize(new Vector2(dirVector3.X, dirVector3.Z));
         var dirAngle = AimAngle(dirVector);
         var angularDifference = dirAngle - aimAngle;

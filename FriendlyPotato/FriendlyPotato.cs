@@ -47,6 +47,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
     private const string Doomed = "Doomed: ";
     private const ushort SeColorWineRed = 14;
     private const ushort SeColorWhite = 64;
+    public const uint FateOffset = 0x10000000;
     private readonly uint[] aRanks;
     private readonly uint[] bRanks;
 
@@ -56,6 +57,29 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
     private readonly Payload friendIcon = new IconPayload(BitmapFontIcon.Returner);
 
     private readonly ByteColor highlightColor = new() { R = 240, G = 0, B = 0, A = 155 };
+
+    private readonly uint[] interestingFates =
+    [
+        1862, // Drink
+        1871, // Snek
+        1922, // Mica
+        831,  // Cerf's up
+        877,  // Prey online
+        1431, // Archie 1/2
+        1432, // Archie 2/2
+        196,  // Odin
+        1106, // Foxy Lady
+        1855, // Chi
+        505,  // Behemoth 1/2
+        506,  // Behemoth 2/2
+        1103, // Ixion
+        1464, // Formi
+        1763, // Dave
+        902,  // Coeurlregina 1/3
+        903,  // Coeurlregina 2/3
+        905   // Coeurlregina 3/3
+    ];
+
     private readonly Payload offWorldIcon = new IconPayload(BitmapFontIcon.CrossWorld);
     private readonly Payload playerIcon = new IconPayload(BitmapFontIcon.AnyClass);
 
@@ -117,29 +141,14 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         aRanks = hunts.ARanks;
         bRanks = hunts.BRanks;
 
-        GameNetwork.NetworkMessage += (ptr, code, id, actorId, direction) =>
-        {
-            if (Configuration.DebugList)
-                PluginLog.Debug($"ptr {ptr} - code {code}  - id {id} - actorId {actorId} - direction {direction}");
-            if (direction == NetworkMessageDirection.ZoneDown)
-            {
-                switch (code)
-                {
-                    case 680: // Local linkshell list download
-                        Framework.RunOnTick(ProcessLinkshellUsers, TimeSpan.FromMilliseconds(100));
-                        break;
-                    case 912: // CWLS list download
-                        Framework.RunOnTick(ProcessCrossworldLinkshellUsers, TimeSpan.FromMilliseconds(100));
-                        break;
-                }
-            }
-        };
+        GameNetwork.NetworkMessage += HandleGameNetworkMessage;
     }
 
     public static RuntimeDataManager RuntimeData { get; private set; } = null!;
 
     public static ConcurrentDictionary<uint, ObjectLocation> ObjectLocations { get; private set; } = [];
     public static ImmutableList<uint> VisibleHunts { get; private set; } = ImmutableList<uint>.Empty;
+    public static ImmutableList<uint> VisibleFates { get; private set; } = ImmutableList<uint>.Empty;
 
     [PluginService]
     internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
@@ -183,6 +192,9 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
     [PluginService]
     internal static IGameGui GameGui { get; private set; } = null!;
 
+    [PluginService]
+    internal static IFateTable FateTable { get; private set; } = null!;
+
     public Configuration Configuration { get; init; }
     private ConfigWindow ConfigWindow { get; init; }
     private PlayerListWindow PlayerListWindow { get; init; }
@@ -203,6 +215,27 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
 
         CommandManager.RemoveHandler(CommandName);
         CommandManager.RemoveHandler(DebugCommandName);
+
+        GameNetwork.NetworkMessage -= HandleGameNetworkMessage;
+    }
+
+    private void HandleGameNetworkMessage(
+        nint ptr, ushort code, uint id, uint actorId, NetworkMessageDirection direction)
+    {
+        if (Configuration.DebugList)
+            PluginLog.Debug($"ptr {ptr} - code {code}  - id {id} - actorId {actorId} - direction {direction}");
+        if (direction == NetworkMessageDirection.ZoneDown)
+        {
+            switch (code)
+            {
+                case 680: // Local linkshell list download
+                    Framework.RunOnTick(ProcessLinkshellUsers, TimeSpan.FromMilliseconds(100));
+                    break;
+                case 912: // CWLS list download
+                    Framework.RunOnTick(ProcessCrossworldLinkshellUsers, TimeSpan.FromMilliseconds(100));
+                    break;
+            }
+        }
     }
 
     public static string AssetPath(string assetName)
@@ -230,8 +263,45 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         if (!LocatorWindow.IsOpen) LocatorWindow.Toggle();
 
         UpdateVisibleHunts();
+        UpdateVisibleFates();
         HighlightLinkshellUsers();
         HighlightCrossworldLinkshellUsers();
+    }
+
+    private void UpdateVisibleFates()
+    {
+        EnsureIsOnFramework();
+
+        List<uint> visible = [];
+        // Process interesting fates that have a position set
+        foreach (var fate in FateTable.Where(f => !f.Position.Equals(Vector3.Zero) &&
+                                                  interestingFates.Contains(f.FateId)))
+        {
+            var pos = new Vector2(fate.Position.X, fate.Position.Z);
+
+            if (!VisibleFates.Contains(fate.FateId))
+            {
+                if (Configuration.FateSoundEnabled) UIGlobals.PlayChatSoundEffect(3);
+
+                if (Configuration.FateChatEnabled)
+                    SendChatFlag(pos, GetInstance(), $"A FATE catches your eye... {fate.Name.TextValue}", SeColorWhite);
+            }
+
+            var objLoc = new ObjectLocation
+            {
+                Angle = (float)CameraAngles.AngleToTarget(fate.Position, CameraAngles.OwnAimAngle()),
+                Distance = DistanceToTarget(fate.Position),
+                Position = pos,
+                Name = fate.Name.TextValue,
+                Type = ObjectLocation.Variant.Fate,
+                Health = 100f - fate.Progress,
+                Duration = fate.TimeRemaining
+            };
+            ObjectLocations[fate.FateId + FateOffset] = objLoc;
+            visible.Add(fate.FateId);
+        }
+
+        VisibleFates = visible.ToImmutableList();
     }
 
     private void UpdateVisibleHunts()
@@ -244,19 +314,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
             var pos = new Vector2(mob.Position.X, mob.Position.Z);
             var previouslyVisible = VisibleHunts.Contains(mob.DataId);
 
-            int? instance = null;
-            unsafe
-            {
-                try
-                {
-                    instance = Convert.ToInt32(UIState.Instance()->PublicInstance.InstanceId);
-                    if (instance.Value == 0) instance = null;
-                }
-                catch (Exception ex)
-                {
-                    PluginLog.Error(ex.ToString());
-                }
-            }
+            var instance = GetInstance();
 
             ObjectLocation.Variant variant;
             if (sRanks.Contains(mob.DataId))
@@ -265,7 +323,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
 
                 if (!previouslyVisible)
                 {
-                    if (Configuration.ChatLocatorEnabled)
+                    if (Configuration.SChatLocatorEnabled)
                     {
                         SendChatFlag(pos, instance, $"You sense the presence of a powerful mark... {mob.Name}",
                                      SeColorWineRed);
@@ -297,28 +355,45 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
             }
 
             string? targetPlayer = null;
-            if (ObjectLocations.TryGetValue(mob.DataId, out var previousLocation) &&
-                previousLocation.Target is not null)
-                targetPlayer = previousLocation.Target;
-            else if (mob.TargetObject is IPlayerCharacter target)
+            if (ObjectLocations.TryGetValue(mob.DataId, out var previousLocation))
             {
-                targetPlayer = $"{target.Name.TextValue}@{HomeWorldName(target.HomeWorld.RowId)}";
-                if (Configuration.PingOnPull) UIGlobals.PlayChatSoundEffect(10);
+                // Preserving previous target
+                if (previousLocation.Target is not null)
+                    targetPlayer = previousLocation.Target;
+
+                // Enter combat ping
+                if (!previousLocation.Status.HasFlag(StatusFlags.InCombat) &&
+                    mob.StatusFlags.HasFlag(StatusFlags.InCombat))
+                {
+                    if (Configuration.PingOnPull)
+                        UIGlobals.PlayChatSoundEffect(10);
+                }
             }
+            // Found in combat ping
+            else if (mob.StatusFlags.HasFlag(StatusFlags.InCombat))
+            {
+                if (Configuration.PingOnPull)
+                    UIGlobals.PlayChatSoundEffect(10);
+            }
+
+            if (targetPlayer is null && mob.TargetObject is IPlayerCharacter target)
+                targetPlayer = $"{target.Name.TextValue}@{HomeWorldName(target.HomeWorld.RowId)}";
 
             var objLoc = new ObjectLocation
             {
-                Angle = (float)CameraAngles.AngleToTarget(mob, CameraAngles.OwnAimAngle()),
-                Distance = DistanceToTarget(mob),
+                Angle = (float)CameraAngles.AngleToTarget(mob.Position, CameraAngles.OwnAimAngle()),
+                Distance = DistanceToTarget(mob.Position),
                 Position = pos,
                 Name = mob.Name.TextValue,
                 Type = variant,
                 Health = 100f * mob.CurrentHp / mob.MaxHp,
-                Target = targetPlayer
+                Target = targetPlayer,
+                Status = mob.StatusFlags
             };
             ObjectLocations[mob.DataId] = objLoc;
             visible.Add(mob.DataId);
         }
+
 #if DEBUG
         if (Configuration.DebugList)
         {
@@ -329,8 +404,8 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
 
                 var objLoc = new ObjectLocation
                 {
-                    Angle = (float)CameraAngles.AngleToTarget(mob, CameraAngles.OwnAimAngle()),
-                    Distance = DistanceToTarget(mob),
+                    Angle = (float)CameraAngles.AngleToTarget(mob.Position, CameraAngles.OwnAimAngle()),
+                    Distance = DistanceToTarget(mob.Position),
                     Position = pos,
                     Name = mob.Name.TextValue,
                     Type = ObjectLocation.Variant.SRank
@@ -501,12 +576,12 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         NearbyDtrBarEntry.Tooltip = new SeString(new TextPayload(tooltip.ToString().Trim()));
     }
 
-    public static double DistanceToTarget(IGameObject target)
+    public static double DistanceToTarget(Vector3 pos)
     {
         return Vector2.Distance(
             new Vector2(ClientState.LocalPlayer!.Position.X,
                         ClientState.LocalPlayer!.Position.Z),
-            new Vector2(target.Position.X, target.Position.Z));
+            new Vector2(pos.X, pos.Z));
     }
 
     public static Vector2 PositionToFlag(Vector2 position)
@@ -571,8 +646,15 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         }
 
         PluginLog.Debug($"Visible Hunts: {string.Join(", ", VisibleHunts)}");
+        PluginLog.Debug($"Visible Fates: {string.Join(", ", VisibleFates)}");
 
         PluginLog.Debug($"Config dir: {PluginInterface.GetPluginConfigDirectory()}");
+
+
+        // Time remaining = seconds left
+        foreach (var fate in FateTable)
+            PluginLog.Debug(
+                $"{fate.FateId} - {fate.Name.TextValue} - {fate.TimeRemaining} - {fate.Progress} - {fate.HandInCount}");
 
         unsafe
         {
@@ -743,6 +825,22 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
                 text->SetText($"({days:F0}d) {name}");
             }
         }
+    }
+
+    private static unsafe int? GetInstance()
+    {
+        int? instance = null;
+        try
+        {
+            instance = Convert.ToInt32(UIState.Instance()->PublicInstance.InstanceId);
+            if (instance.Value == 0) instance = null;
+        }
+        catch (Exception ex)
+        {
+            PluginLog.Error(ex.ToString());
+        }
+
+        return instance;
     }
 
     private static string CharacterFullName(InfoProxyCommonList.CharacterData c)

@@ -27,11 +27,14 @@ public class Configuration : IPluginConfiguration
     // Locator
     public bool ShowHuntLocator { get; set; } = false;
     public bool HuntLocatorBackgroundEnabled { get; set; } = false;
-    public bool ChatLocatorEnabled { get; set; } = false;
+    public bool SChatLocatorEnabled { get; set; } = false;
     public bool SRankSoundEnabled { get; set; } = false;
     public bool ChatLocatorARanksEnabled { get; set; } = false;
     public bool ARankSoundEnabled { get; set; } = false;
     public bool PingOnPull { get; set; } = false;
+    public bool FateLocatorEnabled { get; set; } = false;
+    public bool FateChatEnabled { get; set; } = false;
+    public bool FateSoundEnabled { get; set; } = false;
     public float LocatorOffsetX { get; set; } = -20;
     public float LocatorOffsetY { get; set; } = 15;
 

@@ -210,9 +210,9 @@ public class PlayerListWindow : Window, IDisposable
                 selectableFlags = ImGuiSelectableFlags.Disabled;
             }
 
-            var angleToTarget = CameraAngles.AngleToTarget(player.Character, cameraAimAngle);
+            var angleToTarget = CameraAngles.AngleToTarget(player.Character.Position, cameraAimAngle);
             var icon = DirectionArrow(angleToTarget);
-            var distance = FriendlyPotato.DistanceToTarget(player.Character);
+            var distance = FriendlyPotato.DistanceToTarget(player.Character.Position);
 
             if (distance > 31.0)
             {
