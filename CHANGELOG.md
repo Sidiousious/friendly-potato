@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.14.1"></a>
+## 1.14.1 (2025-05-21)
+
+### Bug Fixes
+
+* clear location memory on territory change
+
 <a name="1.14.0"></a>
 ## 1.14.0 (2025-05-20)
 
