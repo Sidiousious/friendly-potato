@@ -60,15 +60,31 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
 
     private readonly uint[] interestingFates =
     [
+        // Each unique position has its own fate id
         1862, // Drink
         1871, // Snek
         1922, // Mica
         831,  // Cerf's up
         877,  // Prey online
+        878,  // Prey online
+        879,  // Prey online
         1431, // Archie 1/2
         1432, // Archie 2/2
-        196,  // Odin
+        196,  // Odin central
+        197,  // Odin central
+        198,  // Odin east
+        199,  // Odin east
+        200,  // Odin east
+        201,  // Odin south
+        202,  // Odin south
+        203,  // Odin south
+        204,  // Odin south
+        205,  // Odin north
+        206,  // Odin north
+        207,  // Odin north
         1106, // Foxy Lady
+        1107, // Foxy Lady
+        1108, // Foxy Lady
         1855, // Chi
         505,  // Behemoth 1/2
         506,  // Behemoth 2/2
@@ -77,7 +93,10 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         1763, // Dave
         902,  // Coeurlregina 1/3
         903,  // Coeurlregina 2/3
-        905   // Coeurlregina 3/3
+        904,  // Coeurlregina 2/3
+        905,  // Coeurlregina 3/3
+        906,  // Coeurlregina 3/3
+        907   // Coeurlregina 3/3
     ];
 
     private readonly Payload offWorldIcon = new IconPayload(BitmapFontIcon.CrossWorld);
