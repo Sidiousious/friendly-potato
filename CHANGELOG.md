@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.14.0"></a>
+## 1.14.0 (2025-05-20)
+
+### Features
+
+* add fate tracking
+* add ping for pull and puller name
+
+### Bug Fixes
+
+* added all unique fate IDs for multi-location fates
+
 <a name="1.13.2"></a>
 ## 1.13.2 (2025-04-22)
 
