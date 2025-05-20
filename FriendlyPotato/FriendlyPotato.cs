@@ -161,6 +161,8 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         bRanks = hunts.BRanks;
 
         GameNetwork.NetworkMessage += HandleGameNetworkMessage;
+
+        ClientState.TerritoryChanged += TerritoryChanged;
     }
 
     public static RuntimeDataManager RuntimeData { get; private set; } = null!;
@@ -236,6 +238,13 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         CommandManager.RemoveHandler(DebugCommandName);
 
         GameNetwork.NetworkMessage -= HandleGameNetworkMessage;
+
+        ClientState.TerritoryChanged -= TerritoryChanged;
+    }
+
+    private static void TerritoryChanged(ushort _)
+    {
+        ObjectLocations.Clear();
     }
 
     private void HandleGameNetworkMessage(
