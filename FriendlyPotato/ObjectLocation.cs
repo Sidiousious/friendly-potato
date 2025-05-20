@@ -17,4 +17,5 @@ public class ObjectLocation
     public string Name { get; init; } = string.Empty;
     public Variant Type { get; init; } = Variant.SRank;
     public float Health { get; init; } = -1f;
+    public string? Target { get; init; } = null;
 }

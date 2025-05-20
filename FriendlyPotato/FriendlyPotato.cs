@@ -296,6 +296,16 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
                 continue;
             }
 
+            string? targetPlayer = null;
+            if (ObjectLocations.TryGetValue(mob.DataId, out var previousLocation) &&
+                previousLocation.Target is not null)
+                targetPlayer = previousLocation.Target;
+            else if (mob.TargetObject is IPlayerCharacter target)
+            {
+                targetPlayer = $"{target.Name.TextValue}@{HomeWorldName(target.HomeWorld.RowId)}";
+                if (Configuration.PingOnPull) UIGlobals.PlayChatSoundEffect(10);
+            }
+
             var objLoc = new ObjectLocation
             {
                 Angle = (float)CameraAngles.AngleToTarget(mob, CameraAngles.OwnAimAngle()),
@@ -303,7 +313,8 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
                 Position = pos,
                 Name = mob.Name.TextValue,
                 Type = variant,
-                Health = 100f * mob.CurrentHp / mob.MaxHp
+                Health = 100f * mob.CurrentHp / mob.MaxHp,
+                Target = targetPlayer
             };
             ObjectLocations[mob.DataId] = objLoc;
             visible.Add(mob.DataId);

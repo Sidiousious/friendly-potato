@@ -177,6 +177,14 @@ public class ConfigWindow : Window, IDisposable
             }
 
             ImGui.Spacing();
+            var pingOnPull = configuration.PingOnPull;
+            if (ImGui.Checkbox("Play notification sound on pull", ref pingOnPull))
+            {
+                configuration.PingOnPull = pingOnPull;
+                configuration.Save();
+            }
+
+            ImGui.Spacing();
             var chatLocator = configuration.ChatLocatorEnabled;
             if (ImGui.Checkbox("Show S rank flags in chat", ref chatLocator))
             {

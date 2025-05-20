@@ -101,6 +101,8 @@ public sealed class LocatorWindow : Window, IDisposable
                 ImGui.Text($"HP {hp} {estimatedTime}");
             }
 
+            if (sRank.Target is not null) ImGui.Text($"-> {sRank.Target}");
+
             DrawImageRotated(texture, sRank.Angle);
             ImGui.Spacing();
         }
