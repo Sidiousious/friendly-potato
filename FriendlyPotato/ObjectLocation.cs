@@ -10,7 +10,8 @@ public class ObjectLocation
         SRank,
         ARank,
         BRank,
-        Fate
+        Fate,
+        Treasure
     }
 
     public float Angle { get; init; } = -1000f;

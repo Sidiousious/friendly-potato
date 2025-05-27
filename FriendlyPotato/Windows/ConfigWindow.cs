@@ -241,6 +241,22 @@ public class ConfigWindow : Window, IDisposable
             }
 
             ImGui.Spacing();
+            var treasure = configuration.TreasureLocatorEnabled;
+            if (ImGui.Checkbox("Show treasure locator", ref treasure))
+            {
+                configuration.TreasureLocatorEnabled = treasure;
+                configuration.Save();
+            }
+
+            ImGui.Spacing();
+            var treasurePing = configuration.TreasureSoundEnabled;
+            if (ImGui.Checkbox("Play notification sound on treasure spawn", ref treasurePing))
+            {
+                configuration.TreasureSoundEnabled = treasurePing;
+                configuration.Save();
+            }
+
+            ImGui.Spacing();
 
             using (ImRaii.ItemWidth(100f))
             {

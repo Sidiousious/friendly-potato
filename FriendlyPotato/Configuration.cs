@@ -35,6 +35,8 @@ public class Configuration : IPluginConfiguration
     public bool FateLocatorEnabled { get; set; } = false;
     public bool FateChatEnabled { get; set; } = false;
     public bool FateSoundEnabled { get; set; } = false;
+    public bool TreasureLocatorEnabled { get; set; } = false;
+    public bool TreasureSoundEnabled { get; set; } = false;
     public float LocatorOffsetX { get; set; } = -20;
     public float LocatorOffsetY { get; set; } = 15;
 

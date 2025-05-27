@@ -48,6 +48,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
     private const ushort SeColorWineRed = 14;
     private const ushort SeColorWhite = 64;
     public const uint FateOffset = 0x10000000;
+    public const uint TreasureOffset = 0x20000000;
     private readonly uint[] aRanks;
     private readonly uint[] bRanks;
 
@@ -170,6 +171,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
     public static ConcurrentDictionary<uint, ObjectLocation> ObjectLocations { get; private set; } = [];
     public static ImmutableList<uint> VisibleHunts { get; private set; } = ImmutableList<uint>.Empty;
     public static ImmutableList<uint> VisibleFates { get; private set; } = ImmutableList<uint>.Empty;
+    public static ImmutableList<uint> VisibleTreasure { get; private set; } = ImmutableList<uint>.Empty;
 
     [PluginService]
     internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
@@ -292,8 +294,47 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
 
         UpdateVisibleHunts();
         UpdateVisibleFates();
+        UpdateVisibleTreasure();
         HighlightLinkshellUsers();
         HighlightCrossworldLinkshellUsers();
+    }
+
+    private static bool IsTreasureHuntArea()
+    {
+        return ClientState.MapId == 967; // Occult Crescent
+    }
+
+    private static bool IsTreasureCoffer(IGameObject o)
+    {
+        return o.ObjectKind == ObjectKind.Treasure;
+    }
+
+    private void UpdateVisibleTreasure()
+    {
+        EnsureIsOnFramework();
+
+        List<uint> visible = [];
+        if (IsTreasureHuntArea())
+        {
+            foreach (var obj in ObjectTable.Where(IsTreasureCoffer))
+            {
+                if (!VisibleTreasure.Contains(obj.DataId) && Configuration.TreasureSoundEnabled)
+                    UIGlobals.PlayChatSoundEffect(6);
+
+                var objLoc = new ObjectLocation
+                {
+                    Angle = (float)CameraAngles.AngleToTarget(obj.Position, CameraAngles.OwnAimAngle()),
+                    Distance = DistanceToTarget(obj.Position),
+                    Position = new Vector2(obj.Position.X, obj.Position.Z),
+                    Name = obj.Name.TextValue,
+                    Type = ObjectLocation.Variant.Treasure
+                };
+                ObjectLocations[obj.DataId + TreasureOffset] = objLoc;
+                visible.Add(obj.DataId);
+            }
+        }
+
+        VisibleTreasure = visible.ToImmutableList();
     }
 
     private void UpdateVisibleFates()
@@ -671,6 +712,13 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
             PluginLog.Debug($"Statuses {targetCharacter.StatusList.Length}");
             PluginLog.Debug(
                 $"{string.Join(", ", targetCharacter.StatusList.Select(x => $"{x.StatusId} remaining {x.RemainingTime}"))}");
+        }
+
+
+        if (target != null)
+        {
+            PluginLog.Debug(
+                $"Name: {target.Name} - DataId: {target.DataId} - {target.EntityId} - Kind: {target.ObjectKind}, {target.SubKind}");
         }
 
         PluginLog.Debug($"Visible Hunts: {string.Join(", ", VisibleHunts)}");

@@ -61,6 +61,8 @@ public sealed class LocatorWindow : Window, IDisposable
         var visible = new List<uint>(FriendlyPotato.VisibleHunts);
         if (configuration.FateLocatorEnabled)
             visible.AddRange(FriendlyPotato.VisibleFates.Select(fId => fId + FriendlyPotato.FateOffset));
+        if (configuration.TreasureLocatorEnabled)
+            visible.AddRange(FriendlyPotato.VisibleTreasure.Select(id => id + FriendlyPotato.TreasureOffset));
 
         if (visible.Count == 0)
         {
@@ -74,14 +76,12 @@ public sealed class LocatorWindow : Window, IDisposable
 
             if (obj.Distance < 0f) return;
 
-            var killTimeEstimate = EstimateKillTime(id, obj.Health);
-
             var arrowImagePath = obj.Type switch
             {
+                ObjectLocation.Variant.SRank => FriendlyPotato.AssetPath("arrow.png"),
                 ObjectLocation.Variant.ARank => FriendlyPotato.AssetPath("purplearrow.png"),
-                ObjectLocation.Variant.BRank => FriendlyPotato.AssetPath("bluearrow.png"),
                 ObjectLocation.Variant.Fate => FriendlyPotato.AssetPath("greenarrow.png"),
-                _ => FriendlyPotato.AssetPath("arrow.png")
+                _ => FriendlyPotato.AssetPath("bluearrow.png")
             };
 
             var texture = FriendlyPotato.TextureProvider
@@ -93,23 +93,27 @@ public sealed class LocatorWindow : Window, IDisposable
                 return;
             }
 
+            var killTimeEstimate = EstimateKillTime(id, obj.Health);
             var estimatedTime = killTimeEstimate > 0 ? $"(est. {killTimeEstimate:F0}s)" : "";
             var hp = obj.Health < 100f ? $"{obj.Health:F1}%%" : $"{obj.Health:F0}%%";
             var flag = FriendlyPotato.PositionToFlag(obj.Position);
             ImGui.Text($"{DurationString(obj.Duration)}{obj.Name}");
             ImGui.Text($"(x {flag.X} , y {flag.Y}) {obj.Distance:F1}y");
-            using (ImRaii.PushColor(ImGuiCol.Text, killTimeEstimate switch
-                   {
-                       0 => green,
-                       < 10 => red,
-                       < 30 => yellow,
-                       _ => green
-                   }))
+            if (obj.Health >= 0)
             {
-                ImGui.Text($"HP {hp} {estimatedTime}");
+                using (ImRaii.PushColor(ImGuiCol.Text, killTimeEstimate switch
+                       {
+                           0 => green,
+                           < 10 => red,
+                           < 30 => yellow,
+                           _ => green
+                       }))
+                {
+                    ImGui.Text($"HP {hp} {estimatedTime}");
+                }
             }
 
-            if (obj.Target is not null) ImGui.Text($"-> {obj.Target}");
+            if (obj.Target is not null) ImGui.Text($">{obj.Target}");
 
             DrawImageRotated(texture, obj.Angle);
             ImGui.Spacing();
@@ -126,6 +130,8 @@ public sealed class LocatorWindow : Window, IDisposable
 
     private double EstimateKillTime(uint huntId, float currentHealth)
     {
+        if (currentHealth < 0) return 0;
+
         if (healths.TryGetValue(huntId, out var health))
         {
             if (DateTime.Now - health.When > TimeSpan.FromSeconds(HealthTrackInterval))
