@@ -256,10 +256,10 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         {
             switch (code)
             {
-                case 680: // Local linkshell list download
+                case 276: // Local linkshell list download
                     Framework.RunOnTick(ProcessLinkshellUsers, TimeSpan.FromMilliseconds(100));
                     break;
-                case 912: // CWLS list download
+                case 913: // CWLS list download
                     Framework.RunOnTick(ProcessCrossworldLinkshellUsers, TimeSpan.FromMilliseconds(100));
                     break;
             }
