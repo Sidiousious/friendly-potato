@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.16.0"></a>
+## 1.16.0 (2025-05-29)
+
+### Features
+
+* add carrots to treasure locator
+
 <a name="1.15.0"></a>
 ## 1.15.0 (2025-05-27)
 
