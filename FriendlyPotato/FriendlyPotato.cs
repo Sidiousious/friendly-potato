@@ -306,7 +306,28 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
 
     private static bool IsTreasureCoffer(IGameObject o)
     {
-        return o.ObjectKind == ObjectKind.Treasure;
+        switch (o.ObjectKind)
+        {
+            case ObjectKind.Treasure:
+            case ObjectKind.EventObj
+                when o.DataId is 2010139 /* Name "Destination" carrot */:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private static string TreasureName(IGameObject o)
+    {
+        switch (o.DataId)
+        {
+            case 2010139:
+                return "Carrot";
+            case 2014695:
+                return "Survey Point";
+            default:
+                return o.Name.TextValue;
+        }
     }
 
     private void UpdateVisibleTreasure()
@@ -326,7 +347,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
                     Angle = (float)CameraAngles.AngleToTarget(obj.Position, CameraAngles.OwnAimAngle()),
                     Distance = DistanceToTarget(obj.Position),
                     Position = new Vector2(obj.Position.X, obj.Position.Z),
-                    Name = obj.Name.TextValue,
+                    Name = TreasureName(obj),
                     Type = ObjectLocation.Variant.Treasure
                 };
                 ObjectLocations[obj.DataId + TreasureOffset] = objLoc;
@@ -731,6 +752,16 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         foreach (var fate in FateTable)
             PluginLog.Debug(
                 $"{fate.FateId} - {fate.Name.TextValue} - {fate.TimeRemaining} - {fate.Progress} - {fate.HandInCount}");
+
+        Framework.RunOnFrameworkThread(() =>
+        {
+            foreach (var o in ObjectTable)
+                if (DistanceToTarget(o.Position) < 10)
+                {
+                    PluginLog.Debug(
+                        $"{o.Name} - {o.Position} - {o.EntityId} - {o.DataId} - {o.ObjectKind} - {o.SubKind} - {DistanceToTarget(o.Position)}y");
+                }
+        });
 
         unsafe
         {
