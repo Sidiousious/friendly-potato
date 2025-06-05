@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.16.1"></a>
+## 1.16.1 (2025-06-05)
+
+### Bug Fixes
+
+* show only visible treasure
+
 <a name="1.16.0"></a>
 ## 1.16.0 (2025-05-29)
 
