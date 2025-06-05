@@ -23,6 +23,7 @@ using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility;
+using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.Graphics;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -31,6 +32,7 @@ using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using FriendlyPotato.Windows;
 using Lumina.Excel.Sheets;
+using ObjectKind = Dalamud.Game.ClientState.Objects.Enums.ObjectKind;
 
 namespace FriendlyPotato;
 
@@ -97,7 +99,8 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         904,  // Coeurlregina 2/3
         905,  // Coeurlregina 3/3
         906,  // Coeurlregina 3/3
-        907   // Coeurlregina 3/3
+        907,  // Coeurlregina 3/3
+        1259  // Tribute
     ];
 
     private readonly Payload offWorldIcon = new IconPayload(BitmapFontIcon.CrossWorld);
@@ -304,14 +307,21 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         return ClientState.MapId == 967; // Occult Crescent
     }
 
+    private static unsafe bool IsVisible(IGameObject gameObject)
+    {
+        var csObject = (GameObject*)gameObject.Address;
+        return csObject->DrawObject is not null;
+    }
+
     private static bool IsTreasureCoffer(IGameObject o)
     {
         switch (o.ObjectKind)
         {
             case ObjectKind.Treasure:
             case ObjectKind.EventObj
-                when o.DataId is 2010139 /* Name "Destination" carrot */:
-                return true;
+                when o.DataId is 2010139 /* Name "Destination" carrot */ or 2014695 /* Survey Point */
+                         or 2014743 /* Pot coffer */:
+                return IsVisible(o);
             default:
                 return false;
         }
@@ -319,15 +329,12 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
 
     private static string TreasureName(IGameObject o)
     {
-        switch (o.DataId)
+        return o.DataId switch
         {
-            case 2010139:
-                return "Carrot";
-            case 2014695:
-                return "Survey Point";
-            default:
-                return o.Name.TextValue;
-        }
+            2010139 => "Carrot",
+            2014695 => "Survey Point",
+            _ => o.Name.TextValue
+        };
     }
 
     private void UpdateVisibleTreasure()
