@@ -51,6 +51,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
     private const ushort SeColorWhite = 64;
     public const uint FateOffset = 0x10000000;
     public const uint TreasureOffset = 0x20000000;
+    private const uint RenderFlagHidden = 2048;
     private readonly uint[] aRanks;
     private readonly uint[] bRanks;
 
@@ -310,7 +311,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
     private static unsafe bool IsVisible(IGameObject gameObject)
     {
         var csObject = (GameObject*)gameObject.Address;
-        return csObject->DrawObject is not null;
+        return (csObject->RenderFlags & RenderFlagHidden) == 0;
     }
 
     private static bool IsTreasureCoffer(IGameObject o)
@@ -767,6 +768,11 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
                 {
                     PluginLog.Debug(
                         $"{o.Name} - {o.Position} - {o.EntityId} - {o.DataId} - {o.ObjectKind} - {o.SubKind} - {DistanceToTarget(o.Position)}y");
+                    unsafe
+                    {
+                        var csObj = (GameObject*)o.Address;
+                        PluginLog.Debug($"Render flags: {csObj->RenderFlags}");
+                    }
                 }
         });
 
