@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.16.3"></a>
+## 1.16.3 (2025-06-14)
+
+### Bug Fixes
+
+* fate timers being off by one minute on upper half of the minute
+
 <a name="1.16.2"></a>
 ## 1.16.2 (2025-06-07)
 
