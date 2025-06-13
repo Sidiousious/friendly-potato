@@ -123,8 +123,8 @@ public sealed class LocatorWindow : Window, IDisposable
     private static string DurationString(long duration)
     {
         if (duration < 0) return "";
-        var minutes = Math.Round(duration / 60f);
-        var seconds = Math.Round(duration % 60f);
+        var minutes = Math.Floor(duration / 60f);
+        var seconds = Math.Floor(duration % 60f);
         return $"{minutes:00}:{seconds:00} | ";
     }
 
