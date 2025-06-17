@@ -262,10 +262,10 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         {
             switch (code)
             {
-                case 276: // Local linkshell list download
+                case (ushort)OpCode.LinkshellDown: // Local linkshell list download
                     Framework.RunOnTick(ProcessLinkshellUsers, TimeSpan.FromMilliseconds(100));
                     break;
-                case 913: // CWLS list download
+                case (ushort)OpCode.CrossworldLinkshellDown: // CWLS list download
                     Framework.RunOnTick(ProcessCrossworldLinkshellUsers, TimeSpan.FromMilliseconds(100));
                     break;
             }
@@ -975,4 +975,10 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
 
     [GeneratedRegex(@"^[^A-Z']")]
     private static partial Regex NameIconStripper();
+
+    private enum OpCode
+    {
+        LinkshellDown = 814,
+        CrossworldLinkshellDown = 116
+    }
 }
