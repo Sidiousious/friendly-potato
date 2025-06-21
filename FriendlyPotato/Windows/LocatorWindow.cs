@@ -94,7 +94,7 @@ public sealed class LocatorWindow : Window, IDisposable
             }
 
             var killTimeEstimate = EstimateKillTime(id, obj.Health);
-            var estimatedTime = killTimeEstimate > 0 ? $"(est. {killTimeEstimate:F0}s)" : "";
+            var estimatedTime = killTimeEstimate > 0 ? $"(est. {EstimateString(killTimeEstimate)})" : "";
             var hp = obj.Health < 100f ? $"{obj.Health:F1}%%" : $"{obj.Health:F0}%%";
             var flag = FriendlyPotato.PositionToFlag(obj.Position);
             ImGui.Text($"{DurationString(obj.Duration)}{obj.Name}");
@@ -128,6 +128,14 @@ public sealed class LocatorWindow : Window, IDisposable
         return $"{minutes:00}:{seconds:00} | ";
     }
 
+    private static string EstimateString(double duration)
+    {
+        if (duration < 0) return "";
+        var minutes = Math.Floor(duration / 60f);
+        var seconds = Math.Floor(duration % 60f);
+        return minutes >= 1 ? $"{minutes:F0}m{seconds:F0}s" : $"{seconds:F0}s";
+    }
+
     private double EstimateKillTime(uint huntId, float currentHealth)
     {
         if (currentHealth < 0) return 0;
@@ -139,11 +147,11 @@ public sealed class LocatorWindow : Window, IDisposable
         }
         else
         {
-            health = new HealthTrack
+            health = new HealthTrack(currentHealth, DateTime.Now, huntId switch
             {
-                Health = currentHealth,
-                When = DateTime.Now
-            };
+                >= FriendlyPotato.FateOffset => 185,
+                _ => 35
+            });
             healths.Add(huntId, health);
         }
 
@@ -185,12 +193,21 @@ public sealed class LocatorWindow : Window, IDisposable
 
     private class HealthTrack
     {
-        private const int TrackedWindows = 35;
-        private readonly float[] healthDifferences = new float[TrackedWindows];
-        private readonly TimeSpan[] healthTrackDurations = new TimeSpan[TrackedWindows];
+        private readonly float[] healthDifferences;
+        private readonly TimeSpan[] healthTrackDurations;
+        private readonly int trackedWindows;
         private int filled;
         public float Health;
         public DateTime When;
+
+        public HealthTrack(float initialHealth, DateTime when, int trackedWindows = 35)
+        {
+            this.trackedWindows = trackedWindows;
+            healthDifferences = new float[trackedWindows];
+            healthTrackDurations = new TimeSpan[trackedWindows];
+            When = when;
+            Health = initialHealth;
+        }
 
         public void AddHealthDiff(float newHealth)
         {
@@ -215,7 +232,7 @@ public sealed class LocatorWindow : Window, IDisposable
             healthTrackDurations[0] = now - When;
             When = now;
             Health = newHealth;
-            if (filled < TrackedWindows) filled++;
+            if (filled < trackedWindows) filled++;
         }
 
         public double EstimatedKillTime()
