@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.16.5"></a>
+## 1.16.5 (2025-06-21)
+
+### Bug Fixes
+
+* more consistent and useful time estimate for fates
+
 <a name="1.16.4"></a>
 ## 1.16.4 (2025-06-17)
 
