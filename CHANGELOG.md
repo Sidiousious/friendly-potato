@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.16.6"></a>
+## 1.16.6 (2025-06-24)
+
 <a name="1.16.5"></a>
 ## 1.16.5 (2025-06-21)
 
