@@ -978,7 +978,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
 
     private enum OpCode
     {
-        LinkshellDown = 814,
-        CrossworldLinkshellDown = 116
+        LinkshellDown = 393,
+        CrossworldLinkshellDown = 313
     }
 }
