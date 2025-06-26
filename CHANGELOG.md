@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.16.7"></a>
+## 1.16.7 (2025-06-26)
+
+### Bug Fixes
+
+* added missing ixion fates
+
 <a name="1.16.6"></a>
 ## 1.16.6 (2025-06-24)
 
