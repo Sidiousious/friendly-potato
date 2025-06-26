@@ -93,6 +93,8 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         505,  // Behemoth 1/2
         506,  // Behemoth 2/2
         1103, // Ixion
+        1104, // Ixion
+        1105, // Ixion
         1464, // Formi
         1763, // Dave
         902,  // Coeurlregina 1/3
