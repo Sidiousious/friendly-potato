@@ -759,8 +759,12 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
 
         Framework.RunOnFrameworkThread(() =>
         {
+            IGameObject? furthest = null;
+            double howFar = 0;
             foreach (var o in ObjectTable)
-                if (DistanceToTarget(o.Position) < 10)
+            {
+                var dist = DistanceToTarget(o.Position);
+                if (dist < 10)
                 {
                     PluginLog.Debug(
                         $"{o.Name} - {o.Position} - {o.EntityId} - {o.DataId} - {o.ObjectKind} - {o.SubKind} - {DistanceToTarget(o.Position)}y");
@@ -770,6 +774,17 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
                         PluginLog.Debug($"Render flags: {csObj->RenderFlags}");
                     }
                 }
+
+                if (dist > howFar)
+                {
+                    furthest = o;
+                    howFar = dist;
+                }
+            }
+
+            if (furthest != null)
+                PluginLog.Info(
+                    $"Furthest object {furthest.Name} {howFar}y away. {ObjectTable.Count(o => o.Name != SeString.Empty)} non-zero objects visible");
         });
 
         unsafe
@@ -809,7 +824,6 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
             AgentCrossWorldLinkshell.Instance() == null ||
             InfoProxyCrossWorldLinkshellMember.Instance() == null)
         {
-            PluginLog.Debug("Called to log cwls users but an instance was null");
             return;
         }
 
@@ -844,7 +858,6 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         if (InfoProxyLinkshell.Instance() == null || InfoProxyLinkshellMember.Instance() == null ||
             AgentLinkshell.Instance() == null)
         {
-            PluginLog.Debug("Called to log linkshell users but an instance was null");
             return;
         }
 
