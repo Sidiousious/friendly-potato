@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
-using ImGuiNET;
 
 namespace FriendlyPotato.Windows;
 
@@ -186,7 +186,7 @@ public sealed class LocatorWindow : Window, IDisposable
         vertices[3] = center + new Vector2((-halfSize.X * cos) - (halfSize.Y * sin),
                                            (-halfSize.X * sin) + (halfSize.Y * cos));
 
-        drawList.AddImageQuad(texture.ImGuiHandle, vertices[0], vertices[1], vertices[2], vertices[3]);
+        drawList.AddImageQuad(texture.Handle, vertices[0], vertices[1], vertices[2], vertices[3]);
 
         ImGui.Dummy(new Vector2(texture.Width, texture.Height));
     }

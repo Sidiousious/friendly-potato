@@ -149,7 +149,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         ClientState.Logout += Logout;
 
         NearbyDtrBarEntry = DtrBar.Get("FriendlyPotatoNearby");
-        NearbyDtrBarEntry.OnClick += () =>
+        NearbyDtrBarEntry.OnClick += _ =>
         {
             if (KeyState[VirtualKey.CONTROL])
             {
@@ -167,8 +167,6 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         aRanks = hunts.ARanks;
         bRanks = hunts.BRanks;
 
-        GameNetwork.NetworkMessage += HandleGameNetworkMessage;
-
         ClientState.TerritoryChanged += TerritoryChanged;
     }
 
@@ -181,9 +179,6 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
 
     [PluginService]
     internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
-
-    [PluginService]
-    internal static IGameNetwork GameNetwork { get; private set; } = null!;
 
     [PluginService]
     internal static ICommandManager CommandManager { get; private set; } = null!;
@@ -245,8 +240,6 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         CommandManager.RemoveHandler(CommandName);
         CommandManager.RemoveHandler(DebugCommandName);
 
-        GameNetwork.NetworkMessage -= HandleGameNetworkMessage;
-
         ClientState.TerritoryChanged -= TerritoryChanged;
     }
 
@@ -255,6 +248,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         ObjectLocations.Clear();
     }
 
+    // TODO: trigger on agent update
     private void HandleGameNetworkMessage(
         nint ptr, ushort code, uint id, uint actorId, NetworkMessageDirection direction)
     {
@@ -872,7 +866,8 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         var lsAddonPtr = GameGui.GetAddonByName("CrossWorldLinkshell");
         if (lsAddonPtr == nint.Zero) return;
 
-        var lsAddon = (AtkUnitBase*)lsAddonPtr;
+        // TODO: use more managed/safe properties
+        var lsAddon = (AtkUnitBase*)lsAddonPtr.Address;
         var componentList = lsAddon->GetComponentListById(33);
         if (componentList == null) return;
 
@@ -881,7 +876,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
             var renderer = componentList->ItemRendererList[i].AtkComponentListItemRenderer;
             if (renderer == null) continue;
 
-            var text = (AtkTextNode*)renderer->GetTextNodeById(5);
+            var text = renderer->GetTextNodeById(5);
             if (text == null) continue;
 
             var name = SeString.Parse(text->GetText().Value).TextValue;
@@ -914,7 +909,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         var lsAddonPtr = GameGui.GetAddonByName("LinkShell");
         if (lsAddonPtr == nint.Zero) return;
 
-        var lsAddon = (AtkUnitBase*)lsAddonPtr;
+        var lsAddon = (AtkUnitBase*)lsAddonPtr.Address;
         var componentList = lsAddon->GetComponentListById(22);
         if (componentList == null) return;
 
@@ -923,7 +918,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
             var renderer = componentList->ItemRendererList[i].AtkComponentListItemRenderer;
             if (renderer == null) continue;
 
-            var text = (AtkTextNode*)renderer->GetTextNodeById(5);
+            var text = renderer->GetTextNodeById(5);
             if (text == null) continue;
 
             var name = SeString.Parse(text->GetText().Value).TextValue;
