@@ -95,7 +95,7 @@ public sealed class LocatorWindow : Window, IDisposable
 
             var killTimeEstimate = EstimateKillTime(id, obj.Health);
             var estimatedTime = killTimeEstimate > 0 ? $"(est. {EstimateString(killTimeEstimate)})" : "";
-            var hp = obj.Health < 100f ? $"{obj.Health:F1}%%" : $"{obj.Health:F0}%%";
+            var hp = obj.Health < 100f ? $"{obj.Health:F1}%" : $"{obj.Health:F0}%";
             var flag = FriendlyPotato.PositionToFlag(obj.Position);
             ImGui.Text($"{DurationString(obj.Duration)}{obj.Name}");
             ImGui.Text($"(x {flag.X} , y {flag.Y}) {obj.Distance:F1}y");
