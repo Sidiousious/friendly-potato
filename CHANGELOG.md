@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.17.0"></a>
+## 1.17.0 (2025-08-09)
+
+### Features
+
+* add optional draw distance indicator
+
 <a name="1.16.11"></a>
 ## 1.16.11 (2025-08-08)
 
