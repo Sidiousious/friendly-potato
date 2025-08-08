@@ -155,6 +155,13 @@ public class ConfigWindow : Window, IDisposable
                 configuration.Save();
             }
 
+            var drawDistance = configuration.DtrDrawDistanceEnabled;
+            if (ImGui.Checkbox("Show draw distance", ref drawDistance))
+            {
+                configuration.DtrDrawDistanceEnabled = drawDistance;
+                configuration.Save();
+            }
+
             ImGui.Spacing();
         }
 

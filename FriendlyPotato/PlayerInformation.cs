@@ -16,6 +16,7 @@ public class PlayerInformation
     public int Raised { get; set; }
     public ImmutableList<PlayerCharacterDetails> Players { get; set; } = [];
     public ConcurrentDictionary<string, DateTime> SeenHistory { get; } = new();
+    public double FurthestEntity { get; set; }
 
     public void ClearOld()
     {

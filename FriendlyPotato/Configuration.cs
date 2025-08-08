@@ -14,6 +14,7 @@ public class Configuration : IPluginConfiguration
     public bool DtrFriendsEnabled { get; set; } = true;
     public bool DtrWeesEnabled { get; set; } = false;
     public bool DtrDoomEnabled { get; set; } = false;
+    public bool DtrDrawDistanceEnabled { get; set; } = true;
 
     // Player list window
     public bool ListCountsEnabled { get; set; } = true;

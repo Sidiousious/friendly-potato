@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -47,6 +48,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
     private const string OffWorlders = "Off-Worlders: ";
     private const string Wees = "Wees: ";
     private const string Doomed = "Doomed: ";
+    private const string DrawDistance = "Draw Distance: ";
     private const ushort SeColorWineRed = 14;
     private const ushort SeColorWhite = 64;
     public const uint FateOffset = 0x10000000;
@@ -57,6 +59,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
 
     private readonly Payload deadIcon = new IconPayload(BitmapFontIcon.Disconnecting);
     private readonly Payload doomedIcon = new IconPayload(BitmapFontIcon.OrangeDiamond);
+    private readonly Payload drawDistanceIcon = new IconPayload(BitmapFontIcon.CameraMode);
     private readonly Payload dtrSeparator = new TextPayload("  ");
     private readonly Payload friendIcon = new IconPayload(BitmapFontIcon.Returner);
 
@@ -531,6 +534,15 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
             playerInformation.SeenHistory[nameKey] = DateTime.Now;
         }
 
+        if (Configuration.DtrDrawDistanceEnabled)
+        {
+            playerInformation.FurthestEntity = ObjectTable.Aggregate((double)0, (acc, x) =>
+            {
+                var dist = DistanceToTarget(x.Position);
+                return dist > acc ? dist : acc;
+            });
+        }
+
         playerInformation.ClearOld();
 
         UpdatePlayerTypes();
@@ -666,6 +678,15 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
             payloads.Add(new TextPayload(playerInformation.Wees.ToString()));
         }
 
+        if (Configuration.DtrDrawDistanceEnabled)
+        {
+            tooltip.Append(tooltipSeparator).Append(DrawDistance).Append(playerInformation.FurthestEntity);
+            payloads.Add(dtrSeparator);
+            payloads.Add(drawDistanceIcon);
+            payloads.Add(
+                new TextPayload(playerInformation.FurthestEntity.ToString("N0", CultureInfo.CurrentCulture)));
+        }
+
         NearbyDtrBarEntry.Text = new SeString(payloads.Skip(1).ToList());
         NearbyDtrBarEntry.Tooltip = new SeString(new TextPayload(tooltip.ToString().Trim()));
     }
@@ -783,8 +804,10 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
             }
 
             if (furthest != null)
+            {
                 PluginLog.Info(
                     $"Furthest object {furthest.Name} {howFar}y away. {ObjectTable.Count(o => o.Name != SeString.Empty)} non-zero objects visible");
+            }
         });
 
         unsafe
@@ -823,9 +846,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         if (InfoProxyCrossWorldLinkshell.Instance() == null ||
             AgentCrossWorldLinkshell.Instance() == null ||
             InfoProxyCrossWorldLinkshellMember.Instance() == null)
-        {
             return;
-        }
 
         foreach (var c in InfoProxyCrossWorldLinkshellMember.Instance()->CharDataSpan)
         {
@@ -857,9 +878,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
     {
         if (InfoProxyLinkshell.Instance() == null || InfoProxyLinkshellMember.Instance() == null ||
             AgentLinkshell.Instance() == null)
-        {
             return;
-        }
 
         foreach (var c in InfoProxyLinkshellMember.Instance()->CharDataSpan)
         {
