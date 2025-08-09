@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.18.1"></a>
+## 1.18.1 (2025-08-09)
+
+### Bug Fixes
+
+* account for initial target, reset target on mark reset
+
 <a name="1.18.0"></a>
 ## 1.18.0 (2025-08-09)
 
