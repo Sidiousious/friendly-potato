@@ -43,11 +43,18 @@ public sealed class LocatorWindow : Window, IDisposable
         var screenPos = ImGuiHelpers.MainViewport.Pos;
         var screenSize = ImGuiHelpers.MainViewport.Size;
         PositionCondition = ImGuiCond.Always;
-        Position = screenPos + new Vector2(screenSize.X / 2, screenSize.Y / 2) + new Vector2(
+        var windowHeight = arrowCount * 64f;
+        var yOffset = configuration.ExpandLocatorUp ? windowHeight - 64f : 0;
+        Position = screenPos
+                   // Center, accounting for list alignment offset
+                   + new Vector2(screenSize.X / 2, (screenSize.Y / 2) - yOffset)
+                   // User-configured position
+                   + new Vector2(
                        screenSize.X / 100 * configuration.LocatorOffsetX / 2,
                        screenSize.Y / 100 * configuration.LocatorOffsetY / 2);
+
         // Minimum width to fit: Sanu Vali of Dancing Wings
-        Size = new Vector2(185f, 200f * arrowCount);
+        Size = new Vector2(226f, windowHeight);
         if (configuration.HuntLocatorBackgroundEnabled && arrowCount > 0)
             Flags &= ~ImGuiWindowFlags.NoBackground;
         else
@@ -78,10 +85,10 @@ public sealed class LocatorWindow : Window, IDisposable
 
             var arrowImagePath = obj.Type switch
             {
-                ObjectLocation.Variant.SRank => FriendlyPotato.AssetPath("arrow.png"),
-                ObjectLocation.Variant.ARank => FriendlyPotato.AssetPath("purplearrow.png"),
-                ObjectLocation.Variant.Fate => FriendlyPotato.AssetPath("greenarrow.png"),
-                _ => FriendlyPotato.AssetPath("bluearrow.png")
+                ObjectLocation.Variant.SRank => FriendlyPotato.AssetPath("_arrow.png"),
+                ObjectLocation.Variant.ARank => FriendlyPotato.AssetPath("_purplearrow.png"),
+                ObjectLocation.Variant.Fate => FriendlyPotato.AssetPath("_greenarrow.png"),
+                _ => FriendlyPotato.AssetPath("_bluearrow.png")
             };
 
             var texture = FriendlyPotato.TextureProvider
@@ -93,12 +100,14 @@ public sealed class LocatorWindow : Window, IDisposable
                 return;
             }
 
+            DrawImageRotated(texture, obj.Angle);
+            ImGui.SameLine();
+
             var killTimeEstimate = EstimateKillTime(id, obj.Health);
             var estimatedTime = killTimeEstimate > 0 ? $"(est. {EstimateString(killTimeEstimate)})" : "";
             var hp = obj.Health < 100f ? $"{obj.Health:F1}%" : $"{obj.Health:F0}%";
             var flag = FriendlyPotato.PositionToFlag(obj.Position);
-            ImGui.Text($"{DurationString(obj.Duration)}{obj.Name}");
-            ImGui.Text($"(x {flag.X} , y {flag.Y}) {obj.Distance:F1}y");
+            var text = $"{DurationString(obj.Duration)}{obj.Name}\n(x {flag.X} , y {flag.Y}) {obj.Distance:F1}y";
             if (obj.Health >= 0)
             {
                 using (ImRaii.PushColor(ImGuiCol.Text, killTimeEstimate switch
@@ -109,13 +118,14 @@ public sealed class LocatorWindow : Window, IDisposable
                            _ => green
                        }))
                 {
-                    ImGui.Text($"HP {hp} {estimatedTime}");
+                    text += $"\nHP {hp} {estimatedTime}";
                 }
             }
 
-            if (obj.Target is not null) ImGui.Text($">{obj.Target}");
+            if (obj.Target is not null) text += $"\n>{obj.Target}";
 
-            DrawImageRotated(texture, obj.Angle);
+            ImGui.Text(text);
+
             ImGui.Spacing();
         }
     }

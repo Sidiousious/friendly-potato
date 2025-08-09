@@ -9,19 +9,19 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Content Include="..\Data\arrow.png">
+        <Content Include="..\Data\_arrow.png">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>false</Visible>
         </Content>
-        <Content Include="..\Data\purplearrow.png">
+        <Content Include="..\Data\_purplearrow.png">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>false</Visible>
         </Content>
-        <Content Include="..\Data\bluearrow.png">
+        <Content Include="..\Data\_bluearrow.png">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>false</Visible>
         </Content>
-        <Content Include="..\Data\greenarrow.png">
+        <Content Include="..\Data\_greenarrow.png">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>false</Visible>
         </Content>

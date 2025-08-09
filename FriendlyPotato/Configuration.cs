@@ -28,6 +28,7 @@ public class Configuration : IPluginConfiguration
     // Locator
     public bool ShowHuntLocator { get; set; } = false;
     public bool HuntLocatorBackgroundEnabled { get; set; } = false;
+    public bool ExpandLocatorUp { get; set; } = false;
     public bool SChatLocatorEnabled { get; set; } = false;
     public bool SRankSoundEnabled { get; set; } = false;
     public bool ChatLocatorARanksEnabled { get; set; } = false;

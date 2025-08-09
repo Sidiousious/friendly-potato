@@ -184,6 +184,14 @@ public class ConfigWindow : Window, IDisposable
             }
 
             ImGui.Spacing();
+            var expandUp = configuration.ExpandLocatorUp;
+            if (ImGui.Checkbox("Align list to bottom", ref expandUp))
+            {
+                configuration.ExpandLocatorUp = expandUp;
+                configuration.Save();
+            }
+
+            ImGui.Spacing();
             var pingOnPull = configuration.PingOnPull;
             if (ImGui.Checkbox("Play notification sound on hunt mark pull", ref pingOnPull))
             {
@@ -268,12 +276,12 @@ public class ConfigWindow : Window, IDisposable
             using (ImRaii.ItemWidth(100f))
             {
                 var offsetX = configuration.LocatorOffsetX;
-                if (ImGui.InputFloat("Locator X offset", ref offsetX))
+                if (ImGui.DragFloat("Locator X offset", ref offsetX))
                 {
                     offsetX = offsetX switch
                     {
-                        < -70 => -70,
-                        > 70 => 70,
+                        < -100 => -100,
+                        > 100 => 100,
                         _ => offsetX
                     };
 
@@ -282,12 +290,12 @@ public class ConfigWindow : Window, IDisposable
                 }
 
                 var offsetY = configuration.LocatorOffsetY;
-                if (ImGui.InputFloat("Locator Y offset", ref offsetY))
+                if (ImGui.DragFloat("Locator Y offset", ref offsetY))
                 {
                     offsetY = offsetY switch
                     {
-                        < -70 => -70,
-                        > 70 => 70,
+                        < -100 => -100,
+                        > 99 => 99,
                         _ => offsetY
                     };
 
