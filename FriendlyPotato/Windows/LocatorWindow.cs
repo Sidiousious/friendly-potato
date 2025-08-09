@@ -13,6 +13,7 @@ namespace FriendlyPotato.Windows;
 public sealed class LocatorWindow : Window, IDisposable
 {
     private const double HealthTrackInterval = 1;
+    private const float BlockHeight = 80f;
     private readonly Configuration configuration;
 
     private readonly Vector4 green = new(0f, 0.7f, 0f, 1f);
@@ -43,8 +44,8 @@ public sealed class LocatorWindow : Window, IDisposable
         var screenPos = ImGuiHelpers.MainViewport.Pos;
         var screenSize = ImGuiHelpers.MainViewport.Size;
         PositionCondition = ImGuiCond.Always;
-        var windowHeight = arrowCount * 64f;
-        var yOffset = configuration.ExpandLocatorUp ? windowHeight - 64f : 0;
+        var windowHeight = arrowCount * BlockHeight;
+        var yOffset = configuration.ExpandLocatorUp ? windowHeight : 0;
         Position = screenPos
                    // Center, accounting for list alignment offset
                    + new Vector2(screenSize.X / 2, (screenSize.Y / 2) - yOffset)
@@ -53,8 +54,8 @@ public sealed class LocatorWindow : Window, IDisposable
                        screenSize.X / 100 * configuration.LocatorOffsetX / 2,
                        screenSize.Y / 100 * configuration.LocatorOffsetY / 2);
 
-        // Minimum width to fit: Sanu Vali of Dancing Wings
-        Size = new Vector2(226f, windowHeight);
+        // Minimum width to fit: Sanu Vali of Dancing Wings + some more room for initial target
+        Size = new Vector2(266f, windowHeight);
         if (configuration.HuntLocatorBackgroundEnabled && arrowCount > 0)
             Flags &= ~ImGuiWindowFlags.NoBackground;
         else
@@ -122,7 +123,7 @@ public sealed class LocatorWindow : Window, IDisposable
                 }
             }
 
-            if (obj.Target is not null) text += $"\n>{obj.Target}";
+            text += $"\n{obj.Target ?? " "}";
 
             ImGui.Text(text);
 

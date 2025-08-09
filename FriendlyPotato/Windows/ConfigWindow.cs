@@ -295,7 +295,7 @@ public class ConfigWindow : Window, IDisposable
                     offsetY = offsetY switch
                     {
                         < -100 => -100,
-                        > 99 => 99,
+                        > 100 => 100,
                         _ => offsetY
                     };
 

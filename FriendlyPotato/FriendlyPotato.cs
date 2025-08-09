@@ -454,15 +454,14 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
             string? targetPlayer = null;
             if (ObjectLocations.TryGetValue(mob.DataId, out var previousLocation))
             {
-                // Preserving previous target
-                if (previousLocation.Target is not null)
-                    targetPlayer = previousLocation.Target;
-
-                // Enter combat ping
-                if (!previousLocation.Status.HasFlag(StatusFlags.InCombat) &&
-                    mob.StatusFlags.HasFlag(StatusFlags.InCombat))
+                if (mob.StatusFlags.HasFlag(StatusFlags.InCombat))
                 {
-                    if (Configuration.PingOnPull)
+                    // Preserving previous target, if in combat
+                    if (previousLocation.Target is not null)
+                        targetPlayer = previousLocation.Target;
+
+                    // Ping when entering combat
+                    if (!previousLocation.Status.HasFlag(StatusFlags.InCombat) && Configuration.PingOnPull)
                         UIGlobals.PlayChatSoundEffect(10);
                 }
             }
