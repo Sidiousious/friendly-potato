@@ -172,8 +172,8 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
 
         ClientState.TerritoryChanged += TerritoryChanged;
 
-        AddonLifecycle.RegisterListener(AddonEvent.PostRefresh, "CrossWorldLinkshell", OnCWLSEvent);
-        AddonLifecycle.RegisterListener(AddonEvent.PostRefresh, "LinkShell", OnLSEvent);
+        AddonLifecycle.RegisterListener(AddonEvent.PostRequestedUpdate, "CrossWorldLinkshell", OnCWLSEvent);
+        AddonLifecycle.RegisterListener(AddonEvent.PostRequestedUpdate, "LinkShell", OnLSEvent);
     }
 
     public static RuntimeDataManager RuntimeData { get; private set; } = null!;
@@ -251,8 +251,8 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
 
         ClientState.TerritoryChanged -= TerritoryChanged;
 
-        AddonLifecycle.UnregisterListener(AddonEvent.PostRefresh, "CrossWorldLinkshell", OnCWLSEvent);
-        AddonLifecycle.UnregisterListener(AddonEvent.PostRefresh, "LinkShell", OnLSEvent);
+        AddonLifecycle.UnregisterListener(AddonEvent.PostRequestedUpdate, "CrossWorldLinkshell", OnCWLSEvent);
+        AddonLifecycle.UnregisterListener(AddonEvent.PostRequestedUpdate, "LinkShell", OnLSEvent);
     }
 
     private static void OnCWLSEvent(AddonEvent _, AddonArgs __)
