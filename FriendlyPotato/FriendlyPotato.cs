@@ -17,7 +17,6 @@ using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui.Dtr;
-using Dalamud.Game.Network;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Interface.Windowing;
@@ -269,26 +268,6 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
     private static void TerritoryChanged(ushort _)
     {
         ObjectLocations.Clear();
-    }
-
-    // TODO: trigger on agent update
-    private void HandleGameNetworkMessage(
-        nint ptr, ushort code, uint id, uint actorId, NetworkMessageDirection direction)
-    {
-        if (Configuration.DebugList)
-            PluginLog.Debug($"ptr {ptr} - code {code}  - id {id} - actorId {actorId} - direction {direction}");
-        if (direction == NetworkMessageDirection.ZoneDown)
-        {
-            switch (code)
-            {
-                case (ushort)OpCode.LinkshellDown: // Local linkshell list download
-                    Framework.RunOnTick(ProcessLinkshellUsers, TimeSpan.FromMilliseconds(100));
-                    break;
-                case (ushort)OpCode.CrossworldLinkshellDown: // CWLS list download
-                    Framework.RunOnTick(ProcessCrossworldLinkshellUsers, TimeSpan.FromMilliseconds(100));
-                    break;
-            }
-        }
     }
 
     public static string AssetPath(string assetName)
