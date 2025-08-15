@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
+using System.Globalization;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 
 namespace FriendlyPotato;
@@ -17,6 +18,7 @@ public class PlayerInformation
     public ImmutableList<PlayerCharacterDetails> Players { get; set; } = [];
     public ConcurrentDictionary<string, DateTime> SeenHistory { get; } = new();
     public double FurthestEntity { get; set; }
+    public string FurthestEntityString => FurthestEntity.ToString("N0", CultureInfo.CurrentCulture) + "y";
 
     public void ClearOld()
     {

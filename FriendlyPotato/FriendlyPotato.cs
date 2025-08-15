@@ -2,13 +2,14 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using Dalamud.Game.Addon.Lifecycle;
+using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.ClientState.Objects.Enums;
@@ -171,6 +172,9 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         bRanks = hunts.BRanks;
 
         ClientState.TerritoryChanged += TerritoryChanged;
+
+        AddonLifecycle.RegisterListener(AddonEvent.PostRefresh, "CrossWorldLinkshell", OnCWLSEvent);
+        AddonLifecycle.RegisterListener(AddonEvent.PostRefresh, "LinkShell", OnLSEvent);
     }
 
     public static RuntimeDataManager RuntimeData { get; private set; } = null!;
@@ -222,6 +226,9 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
     [PluginService]
     internal static IFateTable FateTable { get; private set; } = null!;
 
+    [PluginService]
+    internal static IAddonLifecycle AddonLifecycle { get; private set; } = null!;
+
     public Configuration Configuration { get; init; }
     private ConfigWindow ConfigWindow { get; init; }
     private PlayerListWindow PlayerListWindow { get; init; }
@@ -244,6 +251,19 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         CommandManager.RemoveHandler(DebugCommandName);
 
         ClientState.TerritoryChanged -= TerritoryChanged;
+
+        AddonLifecycle.UnregisterListener(AddonEvent.PostRefresh, "CrossWorldLinkshell", OnCWLSEvent);
+        AddonLifecycle.UnregisterListener(AddonEvent.PostRefresh, "LinkShell", OnLSEvent);
+    }
+
+    private static void OnCWLSEvent(AddonEvent _, AddonArgs __)
+    {
+        ProcessCrossworldLinkshellUsers();
+    }
+
+    private static void OnLSEvent(AddonEvent _, AddonArgs __)
+    {
+        ProcessLinkshellUsers();
     }
 
     private static void TerritoryChanged(ushort _)
@@ -679,11 +699,12 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
 
         if (Configuration.DtrDrawDistanceEnabled)
         {
-            tooltip.Append(tooltipSeparator).Append(DrawDistance).Append(playerInformation.FurthestEntity);
+            tooltip.Append(tooltipSeparator).Append(DrawDistance)
+                   .Append(playerInformation.FurthestEntityString);
             payloads.Add(dtrSeparator);
             payloads.Add(drawDistanceIcon);
             payloads.Add(
-                new TextPayload(playerInformation.FurthestEntity.ToString("N0", CultureInfo.CurrentCulture)));
+                new TextPayload(playerInformation.FurthestEntityString));
         }
 
         NearbyDtrBarEntry.Text = new SeString(payloads.Skip(1).ToList());
