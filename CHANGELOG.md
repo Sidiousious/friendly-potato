@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.19.0"></a>
+## 1.19.0 (2025-08-16)
+
+### Features
+
+* allow ignoring b ranks in locator
+
 <a name="1.18.3"></a>
 ## 1.18.3 (2025-08-15)
 
