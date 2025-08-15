@@ -442,7 +442,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
                         UIGlobals.PlayChatSoundEffect(2);
                 }
             }
-            else if (bRanks.Contains(mob.DataId))
+            else if (bRanks.Contains(mob.DataId) && Configuration.ShowBRanks)
                 variant = ObjectLocation.Variant.BRank;
             else
             {

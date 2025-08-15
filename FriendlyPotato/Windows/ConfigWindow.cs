@@ -184,6 +184,14 @@ public class ConfigWindow : Window, IDisposable
             }
 
             ImGui.Spacing();
+            var bRanks = configuration.ShowBRanks;
+            if (ImGui.Checkbox("Locate B ranks", ref bRanks))
+            {
+                configuration.ShowBRanks = bRanks;
+                configuration.Save();
+            }
+
+            ImGui.Spacing();
             var expandUp = configuration.ExpandLocatorUp;
             if (ImGui.Checkbox("Align list to bottom", ref expandUp))
             {
