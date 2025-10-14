@@ -27,7 +27,7 @@ public sealed class LocatorWindow : Window, IDisposable
     public LocatorWindow(FriendlyPotato plugin) : base(
         "Friendly Potato Hunt Locator###FriendlyPotatoHuntLocator")
     {
-        Flags = ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoBackground;
+        Flags = ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoBackground;
         SizeCondition = ImGuiCond.Always;
         PositionCondition = ImGuiCond.Always;
         configuration = plugin.Configuration;
@@ -108,7 +108,7 @@ public sealed class LocatorWindow : Window, IDisposable
             var estimatedTime = killTimeEstimate > 0 ? $"(est. {EstimateString(killTimeEstimate)})" : "";
             var hp = obj.Health < 100f ? $"{obj.Health:F1}%" : $"{obj.Health:F0}%";
             var flag = FriendlyPotato.PositionToFlag(obj.Position);
-            var text = $"{DurationString(obj.Duration)}{obj.Name}\n(x {flag.X} , y {flag.Y}) {obj.Distance:F1}y";
+            var text = $"\n{DurationString(obj.Duration)}(x {flag.X} , y {flag.Y}) {obj.Distance:F1}y";
             if (obj.Health >= 0)
             {
                 using (ImRaii.PushColor(ImGuiCol.Text, killTimeEstimate switch
@@ -124,6 +124,15 @@ public sealed class LocatorWindow : Window, IDisposable
             }
 
             text += $"\n{obj.Target ?? " "}";
+
+            if (ImGui.SmallButton(obj.Name))
+            {
+                FriendlyPotato.PluginLog.Debug("Clicked on " + obj.Name);
+                FriendlyPotato.SetFocusTarget(obj);
+                FriendlyPotato.SetMapFlag(obj.Position);
+            }
+
+            ImGui.SameLine(60, 0);
 
             ImGui.Text(text);
 

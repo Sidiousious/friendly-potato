@@ -318,7 +318,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         {
             case ObjectKind.Treasure:
             case ObjectKind.EventObj
-                when o.DataId is 2010139 /* Name "Destination" carrot */ or 2014695 /* Survey Point */
+                when o.BaseId is 2010139 /* Name "Destination" carrot */ or 2014695 /* Survey Point */
                          or 2014743 /* Pot coffer */:
                 return IsVisible(o);
             default:
@@ -328,7 +328,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
 
     private static string TreasureName(IGameObject o)
     {
-        return o.DataId switch
+        return o.BaseId switch
         {
             2010139 => "Carrot",
             2014695 => "Survey Point",
@@ -345,7 +345,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         {
             foreach (var obj in ObjectTable.Where(IsTreasureCoffer))
             {
-                if (!VisibleTreasure.Contains(obj.DataId) && Configuration.TreasureSoundEnabled)
+                if (!VisibleTreasure.Contains(obj.BaseId) && Configuration.TreasureSoundEnabled)
                     UIGlobals.PlayChatSoundEffect(6);
 
                 var objLoc = new ObjectLocation
@@ -356,8 +356,8 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
                     Name = TreasureName(obj),
                     Type = ObjectLocation.Variant.Treasure
                 };
-                ObjectLocations[obj.DataId + TreasureOffset] = objLoc;
-                visible.Add(obj.DataId);
+                ObjectLocations[obj.BaseId + TreasureOffset] = objLoc;
+                visible.Add(obj.BaseId);
             }
         }
 
@@ -408,12 +408,12 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         foreach (var mob in ObjectTable.Skip(1).OfType<IBattleNpc>())
         {
             var pos = new Vector2(mob.Position.X, mob.Position.Z);
-            var previouslyVisible = VisibleHunts.Contains(mob.DataId);
+            var previouslyVisible = VisibleHunts.Contains(mob.BaseId);
 
             var instance = GetInstance();
 
             ObjectLocation.Variant variant;
-            if (sRanks.Contains(mob.DataId))
+            if (sRanks.Contains(mob.BaseId))
             {
                 variant = ObjectLocation.Variant.SRank;
 
@@ -429,7 +429,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
                         UIGlobals.PlayChatSoundEffect(2);
                 }
             }
-            else if (aRanks.Contains(mob.DataId))
+            else if (aRanks.Contains(mob.BaseId))
             {
                 variant = ObjectLocation.Variant.ARank;
 
@@ -442,7 +442,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
                         UIGlobals.PlayChatSoundEffect(2);
                 }
             }
-            else if (bRanks.Contains(mob.DataId) && Configuration.ShowBRanks)
+            else if (bRanks.Contains(mob.BaseId) && Configuration.ShowBRanks)
                 variant = ObjectLocation.Variant.BRank;
             else
             {
@@ -451,7 +451,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
             }
 
             string? targetPlayer = null;
-            if (ObjectLocations.TryGetValue(mob.DataId, out var previousLocation))
+            if (ObjectLocations.TryGetValue(mob.BaseId, out var previousLocation))
             {
                 if (mob.StatusFlags.HasFlag(StatusFlags.InCombat))
                 {
@@ -485,8 +485,8 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
                 Target = targetPlayer,
                 Status = mob.StatusFlags
             };
-            ObjectLocations[mob.DataId] = objLoc;
-            visible.Add(mob.DataId);
+            ObjectLocations[mob.BaseId] = objLoc;
+            visible.Add(mob.BaseId);
         }
 
 #if DEBUG
@@ -505,8 +505,8 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
                     Name = mob.Name.TextValue,
                     Type = ObjectLocation.Variant.SRank
                 };
-                visible.Add(mob.DataId);
-                ObjectLocations[mob.DataId] = objLoc;
+                visible.Add(mob.BaseId);
+                ObjectLocations[mob.BaseId] = objLoc;
             }
         }
 #endif
@@ -728,6 +728,13 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         ChatGui.Print(message.BuiltString);
     }
 
+    internal static void SetMapFlag(Vector2 position)
+    {
+        var flagCoords = PositionToFlag(position);
+        var mapLink = new MapLinkPayload(ClientState.TerritoryType, ClientState.MapId, flagCoords.X, flagCoords.Y);
+        GameGui.OpenMapWithMapLink(mapLink);
+    }
+
     private static void EnsureIsOnFramework()
     {
         if (!Framework.IsInFrameworkUpdateThread)
@@ -749,7 +756,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         if (target is IBattleNpc npc)
         {
             PluginLog.Debug(
-                $"Name: {npc.Name} - DataId: {npc.DataId} - is A rank? {aRanks.Contains(npc.DataId)} - is S rank? {sRanks.Contains(npc.DataId)}");
+                $"Name: {npc.Name} - DataId: {npc.BaseId} - is A rank? {aRanks.Contains(npc.BaseId)} - is S rank? {sRanks.Contains(npc.BaseId)}");
         }
 
         if (target is IBattleChara targetCharacter)
@@ -763,7 +770,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         if (target != null)
         {
             PluginLog.Debug(
-                $"Name: {target.Name} - DataId: {target.DataId} - {target.EntityId} - Kind: {target.ObjectKind}, {target.SubKind}");
+                $"Name: {target.Name} - DataId: {target.BaseId} - {target.EntityId} - Kind: {target.ObjectKind}, {target.SubKind}");
         }
 
         PluginLog.Debug($"Visible Hunts: {string.Join(", ", VisibleHunts)}");
@@ -787,12 +794,14 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
                 if (dist < 10)
                 {
                     PluginLog.Debug(
-                        $"{o.Name} - {o.Position} - {o.EntityId} - {o.DataId} - {o.ObjectKind} - {o.SubKind} - {DistanceToTarget(o.Position)}y");
+                        $"{o.Name} - {o.Position} - {o.EntityId} - {o.BaseId} - {o.ObjectKind} - {o.SubKind} - {DistanceToTarget(o.Position)}y");
                     unsafe
                     {
                         var csObj = (GameObject*)o.Address;
                         PluginLog.Debug($"Render flags: {csObj->RenderFlags}");
                     }
+
+                    PluginLog.Debug($"OwnerId: {o.OwnerId}");
                 }
 
                 if (dist > howFar)
@@ -1004,9 +1013,21 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
     [GeneratedRegex(@"^[^A-Z']")]
     private static partial Regex NameIconStripper();
 
-    private enum OpCode
+    public static void SetFocusTarget(ObjectLocation objLoc)
     {
-        LinkshellDown = 152,
-        CrossworldLinkshellDown = 844
+        Framework.RunOnFrameworkThread(() =>
+        {
+            try
+            {
+                var obj = ObjectTable.Single(o => objLoc.Name == TreasureName(o) &&
+                                                  Vector2.Distance(objLoc.Position,
+                                                                   new Vector2(o.Position.X, o.Position.Z)) < 5);
+                TargetManager.FocusTarget = obj;
+            }
+            catch (InvalidOperationException)
+            {
+                // Don't care
+            }
+        });
     }
 }
