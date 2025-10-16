@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.20.0"></a>
+## 1.20.0 (2025-10-16)
+
+### Features
+
+* click to focus and flag in locator
+
+### Bug Fixes
+
+* increase distance offset and log failures in focustarget setting
+
 <a name="1.19.1"></a>
 ## 1.19.1 (2025-09-02)
 
