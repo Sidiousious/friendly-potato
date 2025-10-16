@@ -1021,12 +1021,12 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
             {
                 var obj = ObjectTable.Single(o => objLoc.Name == TreasureName(o) &&
                                                   Vector2.Distance(objLoc.Position,
-                                                                   new Vector2(o.Position.X, o.Position.Z)) < 5);
+                                                                   new Vector2(o.Position.X, o.Position.Z)) < 15);
                 TargetManager.FocusTarget = obj;
             }
             catch (InvalidOperationException)
             {
-                // Don't care
+                PluginLog.Debug($"Could not find object to focus target on for {objLoc.Name} at {PositionToFlag(objLoc.Position)}");
             }
         });
     }
