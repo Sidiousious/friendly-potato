@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.21.0"></a>
+## 1.21.0 (2025-10-21)
+
+### Features
+
+* added height tracking to locator
+
+### Bug Fixes
+
+* properly hide locator window when not shown
+
 <a name="1.20.0"></a>
 ## 1.20.0 (2025-10-16)
 
