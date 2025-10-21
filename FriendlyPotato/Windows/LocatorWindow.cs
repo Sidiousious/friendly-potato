@@ -78,6 +78,8 @@ public sealed class LocatorWindow : Window, IDisposable
             return;
         }
 
+        var playerHeight = FriendlyPotato.ClientState.LocalPlayer?.Position.Y ?? 0f;
+
         foreach (var id in visible)
         {
             if (!FriendlyPotato.ObjectLocations.TryGetValue(id, out var obj)) continue;
@@ -108,16 +110,16 @@ public sealed class LocatorWindow : Window, IDisposable
             var estimatedTime = killTimeEstimate > 0 ? $"(est. {EstimateString(killTimeEstimate)})" : "";
             var hp = obj.Health < 100f ? $"{obj.Health:F1}%" : $"{obj.Health:F0}%";
             var flag = FriendlyPotato.PositionToFlag(obj.Position);
-            var text = $"\n{DurationString(obj.Duration)}(x {flag.X} , y {flag.Y}) {obj.Distance:F1}y";
+            var text = $"\n{DurationString(obj.Duration)}(x {flag.X} , y {flag.Y}) {obj.Distance:F1}y {obj.Height - playerHeight:+0.0;-0.0;0.0}m";
             if (obj.Health >= 0)
             {
                 using (ImRaii.PushColor(ImGuiCol.Text, killTimeEstimate switch
-                       {
-                           0 => green,
-                           < 10 => red,
-                           < 30 => yellow,
-                           _ => green
-                       }))
+                {
+                    0 => green,
+                    < 10 => red,
+                    < 30 => yellow,
+                    _ => green
+                }))
                 {
                     text += $"\nHP {hp} {estimatedTime}";
                 }
@@ -125,7 +127,7 @@ public sealed class LocatorWindow : Window, IDisposable
 
             text += $"\n{obj.Target ?? " "}";
 
-            if (ImGui.SmallButton(obj.Name))
+            if (SmallButton(obj.Name, Math.Abs(obj.Height - playerHeight) >= 100f))
             {
                 FriendlyPotato.PluginLog.Debug("Clicked on " + obj.Name);
                 FriendlyPotato.SetFocusTarget(obj);
@@ -137,6 +139,19 @@ public sealed class LocatorWindow : Window, IDisposable
             ImGui.Text(text);
 
             ImGui.Spacing();
+        }
+    }
+
+    private static bool SmallButton(string label, bool faded)
+    {
+        if (faded)
+        {
+            using var style = ImRaii.PushStyle(ImGuiStyleVar.Alpha, ImGui.GetStyle().Alpha * 0.5f);
+            return ImGui.SmallButton(label);
+        }
+        else
+        {
+            return ImGui.SmallButton(label);
         }
     }
 

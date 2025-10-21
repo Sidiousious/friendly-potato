@@ -353,6 +353,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
                     Angle = (float)CameraAngles.AngleToTarget(obj.Position, CameraAngles.OwnAimAngle()),
                     Distance = DistanceToTarget(obj.Position),
                     Position = new Vector2(obj.Position.X, obj.Position.Z),
+                    Height = obj.Position.Y,
                     Name = TreasureName(obj),
                     Type = ObjectLocation.Variant.Treasure
                 };
@@ -388,6 +389,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
                 Angle = (float)CameraAngles.AngleToTarget(fate.Position, CameraAngles.OwnAimAngle()),
                 Distance = DistanceToTarget(fate.Position),
                 Position = pos,
+                Height = fate.Position.Y,
                 Name = fate.Name.TextValue,
                 Type = ObjectLocation.Variant.Fate,
                 Health = 100f - fate.Progress,
@@ -479,6 +481,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
                 Angle = (float)CameraAngles.AngleToTarget(mob.Position, CameraAngles.OwnAimAngle()),
                 Distance = DistanceToTarget(mob.Position),
                 Position = pos,
+                Height = mob.Position.Y,
                 Name = mob.Name.TextValue,
                 Type = variant,
                 Health = 100f * mob.CurrentHp / mob.MaxHp,
