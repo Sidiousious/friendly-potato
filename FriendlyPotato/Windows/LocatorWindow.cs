@@ -44,7 +44,7 @@ public sealed class LocatorWindow : Window, IDisposable
         var screenPos = ImGuiHelpers.MainViewport.Pos;
         var screenSize = ImGuiHelpers.MainViewport.Size;
         PositionCondition = ImGuiCond.Always;
-        var windowHeight = arrowCount * BlockHeight;
+        var windowHeight = configuration.ShowHuntLocator ? arrowCount * BlockHeight : 0f;
         var yOffset = configuration.ExpandLocatorUp ? windowHeight : 0;
         Position = screenPos
                    // Center, accounting for list alignment offset
