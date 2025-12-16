@@ -8,7 +8,7 @@ public static class CameraAngles
 {
     public static double AngleToTarget(Vector3 pos, double aimAngle)
     {
-        var dirVector3 = FriendlyPotato.ClientState.LocalPlayer!.Position - pos;
+        var dirVector3 = FriendlyPotato.LastPlayerPosition - pos;
         var dirVector = Vector2.Normalize(new Vector2(dirVector3.X, dirVector3.Z));
         var dirAngle = AimAngle(dirVector);
         var angularDifference = dirAngle - aimAngle;
@@ -42,7 +42,7 @@ public static class CameraAngles
             var camera = CameraManager.Instance()->CurrentCamera;
             var threeDAim =
                 new Vector3(camera->RenderCamera->Origin.X, camera->RenderCamera->Origin.Y,
-                            camera->RenderCamera->Origin.Z) - FriendlyPotato.ClientState.LocalPlayer!.Position;
+                            camera->RenderCamera->Origin.Z) - FriendlyPotato.LastPlayerPosition;
             return Vector2.Normalize(new Vector2(threeDAim.X, threeDAim.Z));
         }
         catch (NullReferenceException)

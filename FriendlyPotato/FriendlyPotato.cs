@@ -11,7 +11,6 @@ using System.Text.RegularExpressions;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.ClientState.Keys;
-using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.ClientState.Objects.Types;
@@ -147,7 +146,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
 
         PluginInterface.UiBuilder.Draw += DrawUi;
         PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUi;
-        PluginInterface.UiBuilder.OpenMainUi += PlayerListWindow.Toggle;
+        PluginInterface.UiBuilder.OpenMainUi += () => PlayerListWindow.Toggle();
 
         ClientState.Logout += Logout;
 
@@ -233,6 +232,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
     private PlayerListWindow PlayerListWindow { get; init; }
     private LocatorWindow LocatorWindow { get; init; }
     private IDtrBarEntry NearbyDtrBarEntry { get; set; }
+    public static Vector3 LastPlayerPosition { get; set; } = Vector3.Zero;
 
     public void Dispose()
     {
@@ -288,11 +288,12 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
     private void FrameworkOnUpdateEvent(IFramework framework)
     {
         EnsureIsOnFramework();
-        if (!ClientState.IsLoggedIn || ClientState.LocalPlayer == null) return;
+        if (!ClientState.IsLoggedIn || ObjectTable.LocalPlayer == null) return;
+        LastPlayerPosition = ObjectTable.LocalPlayer.Position;
         UpdatePlayerList();
         UpdateDtrBar();
 
-        if (!LocatorWindow.IsOpen) LocatorWindow.Toggle();
+        if (LocatorWindow.IsOpen != Configuration.ShowHuntLocator) LocatorWindow.Toggle();
 
         UpdateVisibleHunts();
         UpdateVisibleFates();
@@ -495,7 +496,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
 #if DEBUG
         if (Configuration.DebugList)
         {
-            var target = ClientState.LocalPlayer!.TargetObject;
+            var target = ObjectTable.LocalPlayer!.TargetObject;
             if (target is IBattleNpc mob)
             {
                 var pos = new Vector2(mob.Position.X, mob.Position.Z);
@@ -551,13 +552,14 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
 
     private void UpdatePlayerTypes()
     {
+        EnsureIsOnFramework();
         const uint weeEaId = 423;
 
         var friends = 0;
         var dead = 0;
         var offWorlders = 0;
         // Local player is not included in Players list, so include own wee here
-        var wees = ClientState.LocalPlayer!.CurrentMinion?.ValueNullable?.RowId == weeEaId ? 1 : 0;
+        var wees = ObjectTable.LocalPlayer!.CurrentMinion?.ValueNullable?.RowId == weeEaId ? 1 : 0;
         var doomed = 0;
         var raised = 0;
 
@@ -572,7 +574,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
                 dead++;
             }
 
-            if (player.Character.HomeWorld.RowId != ClientState.LocalPlayer!.CurrentWorld.RowId)
+            if (player.Character.HomeWorld.RowId != ObjectTable.LocalPlayer.CurrentWorld.RowId)
             {
                 player.AddKind(PlayerCharacterKind.OffWorlder);
                 offWorlders++;
@@ -583,6 +585,8 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
                 player.AddKind(PlayerCharacterKind.Friend);
                 friends++;
             }
+
+            continue;
 
             foreach (var status in player.Character.StatusList)
             {
@@ -696,8 +700,8 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
     public static double DistanceToTarget(Vector3 pos)
     {
         return Vector2.Distance(
-            new Vector2(ClientState.LocalPlayer!.Position.X,
-                        ClientState.LocalPlayer!.Position.Z),
+            new Vector2(ObjectTable.LocalPlayer!.Position.X,
+                        ObjectTable.LocalPlayer.Position.Z),
             new Vector2(pos.X, pos.Z));
     }
 
@@ -751,80 +755,89 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
 
     private void OnDebugCommand(string command, string args)
     {
-        var pos = ClientState.LocalPlayer!.Position;
-        var posFlat = new Vector2(pos.X, pos.Z);
-        PluginLog.Debug(
-            $"Current Position: {posFlat} - {PositionToFlag(posFlat)} - {ClientState.TerritoryType} - {ClientState.MapId}");
-        var target = ClientState.LocalPlayer!.TargetObject;
-        if (target is IBattleNpc npc)
+        foreach (var player in playerInformation.Players)
         {
-            PluginLog.Debug(
-                $"Name: {npc.Name} - DataId: {npc.BaseId} - is A rank? {aRanks.Contains(npc.BaseId)} - is S rank? {sRanks.Contains(npc.BaseId)}");
-        }
-
-        if (target is IBattleChara targetCharacter)
-        {
-            PluginLog.Debug($"Statuses {targetCharacter.StatusList.Length}");
-            PluginLog.Debug(
-                $"{string.Join(", ", targetCharacter.StatusList.Select(x => $"{x.StatusId} remaining {x.RemainingTime}"))}");
-        }
-
-
-        if (target != null)
-        {
-            PluginLog.Debug(
-                $"Name: {target.Name} - DataId: {target.BaseId} - {target.EntityId} - Kind: {target.ObjectKind}, {target.SubKind}");
-        }
-
-        PluginLog.Debug($"Visible Hunts: {string.Join(", ", VisibleHunts)}");
-        PluginLog.Debug($"Visible Fates: {string.Join(", ", VisibleFates)}");
-
-        PluginLog.Debug($"Config dir: {PluginInterface.GetPluginConfigDirectory()}");
-
-
-        // Time remaining = seconds left
-        foreach (var fate in FateTable)
-            PluginLog.Debug(
-                $"{fate.FateId} - {fate.Name.TextValue} - {fate.TimeRemaining} - {fate.Progress} - {fate.HandInCount}");
-
-        Framework.RunOnFrameworkThread(() =>
-        {
-            IGameObject? furthest = null;
-            double howFar = 0;
-            foreach (var o in ObjectTable)
+            PluginLog.Debug($"{player.Character.Name} status length: {player.Character.StatusList.Length}");
+            foreach (var status in player.Character.StatusList)
             {
-                var dist = DistanceToTarget(o.Position);
-                if (dist < 10)
-                {
-                    PluginLog.Debug(
-                        $"{o.Name} - {o.Position} - {o.EntityId} - {o.BaseId} - {o.ObjectKind} - {o.SubKind} - {DistanceToTarget(o.Position)}y");
-                    unsafe
-                    {
-                        var csObj = (GameObject*)o.Address;
-                        PluginLog.Debug($"Render flags: {csObj->RenderFlags}");
-                    }
-
-                    PluginLog.Debug($"OwnerId: {o.OwnerId}");
-                }
-
-                if (dist > howFar)
-                {
-                    furthest = o;
-                    howFar = dist;
-                }
+                PluginLog.Debug(
+                    $"Status {status.StatusId} remaining {status.RemainingTime}");
             }
-
-            if (furthest != null)
-            {
-                PluginLog.Info(
-                    $"Furthest object {furthest.Name} {howFar}y away. {ObjectTable.Count(o => o.Name != SeString.Empty)} non-zero objects visible");
-            }
-        });
-
-        unsafe
-        {
-            PluginLog.Debug($"Currently in instance: {UIState.Instance()->PublicInstance.InstanceId}");
         }
+        // var pos = ObjectTable.LocalPlayer!.Position;
+        // var posFlat = new Vector2(pos.X, pos.Z);
+        // PluginLog.Debug(
+        //     $"Current Position: {posFlat} - {PositionToFlag(posFlat)} - {ClientState.TerritoryType} - {ClientState.MapId}");
+        // var target = ObjectTable.LocalPlayer.TargetObject;
+        // if (target is IBattleNpc npc)
+        // {
+        //     PluginLog.Debug(
+        //         $"Name: {npc.Name} - DataId: {npc.BaseId} - is A rank? {aRanks.Contains(npc.BaseId)} - is S rank? {sRanks.Contains(npc.BaseId)}");
+        // }
+
+        // if (target is IBattleChara targetCharacter)
+        // {
+        //     PluginLog.Debug($"Statuses {targetCharacter.StatusList.Length}");
+        //     PluginLog.Debug(
+        //         $"{string.Join(", ", targetCharacter.StatusList.Select(x => $"{x.StatusId} remaining {x.RemainingTime}"))}");
+        // }
+
+
+        // if (target != null)
+        // {
+        //     PluginLog.Debug(
+        //         $"Name: {target.Name} - DataId: {target.BaseId} - {target.EntityId} - Kind: {target.ObjectKind}, {target.SubKind}");
+        // }
+
+        // PluginLog.Debug($"Visible Hunts: {string.Join(", ", VisibleHunts)}");
+        // PluginLog.Debug($"Visible Fates: {string.Join(", ", VisibleFates)}");
+
+        // PluginLog.Debug($"Config dir: {PluginInterface.GetPluginConfigDirectory()}");
+
+
+        // // Time remaining = seconds left
+        // foreach (var fate in FateTable)
+        //     PluginLog.Debug(
+        //         $"{fate.FateId} - {fate.Name.TextValue} - {fate.TimeRemaining} - {fate.Progress} - {fate.HandInCount}");
+
+        // Framework.RunOnFrameworkThread(() =>
+        // {
+        //     IGameObject? furthest = null;
+        //     double howFar = 0;
+        //     foreach (var o in ObjectTable)
+        //     {
+        //         var dist = DistanceToTarget(o.Position);
+        //         if (dist < 10)
+        //         {
+        //             PluginLog.Debug(
+        //                 $"{o.Name} - {o.Position} - {o.EntityId} - {o.BaseId} - {o.ObjectKind} - {o.SubKind} - {DistanceToTarget(o.Position)}y");
+        //             unsafe
+        //             {
+        //                 var csObj = (GameObject*)o.Address;
+        //                 PluginLog.Debug($"Render flags: {csObj->RenderFlags}");
+        //             }
+
+        //             PluginLog.Debug($"OwnerId: {o.OwnerId}");
+        //         }
+
+        //         if (dist > howFar)
+        //         {
+        //             furthest = o;
+        //             howFar = dist;
+        //         }
+        //     }
+
+        //     if (furthest != null)
+        //     {
+        //         PluginLog.Info(
+        //             $"Furthest object {furthest.Name} {howFar}y away. {ObjectTable.Count(o => o.Name != SeString.Empty)} non-zero objects visible");
+        //     }
+        // });
+
+        // unsafe
+        // {
+        //     PluginLog.Debug($"Currently in instance: {UIState.Instance()->PublicInstance.InstanceId}");
+        // }
     }
 
     private static (uint[] SRanks, uint[] ARanks, uint[] BRanks) NotoriousMonsters()
@@ -970,7 +983,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
 
             var lastSeen =
                 RuntimeData.LastSeen(
-                    $"{compareName}@{ClientState.LocalPlayer?.HomeWorld.Value.Name.ToDalamudString().TextValue}");
+                    $"{compareName}@{ObjectTable.LocalPlayer!.HomeWorld.Value.Name.ToDalamudString().TextValue}");
             double days = -1;
             if (lastSeen != null) days = (DateTime.Now - lastSeen.Value).TotalDays;
 

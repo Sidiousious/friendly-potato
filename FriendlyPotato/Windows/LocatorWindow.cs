@@ -44,7 +44,7 @@ public sealed class LocatorWindow : Window, IDisposable
         var screenPos = ImGuiHelpers.MainViewport.Pos;
         var screenSize = ImGuiHelpers.MainViewport.Size;
         PositionCondition = ImGuiCond.Always;
-        var windowHeight = configuration.ShowHuntLocator ? arrowCount * BlockHeight : 0f;
+        var windowHeight = arrowCount * BlockHeight;
         var yOffset = configuration.ExpandLocatorUp ? windowHeight : 0;
         Position = screenPos
                    // Center, accounting for list alignment offset
@@ -64,8 +64,6 @@ public sealed class LocatorWindow : Window, IDisposable
 
     public override void Draw()
     {
-        if (!configuration.ShowHuntLocator) return;
-
         var visible = new List<uint>(FriendlyPotato.VisibleHunts);
         if (configuration.FateLocatorEnabled)
             visible.AddRange(FriendlyPotato.VisibleFates.Select(fId => fId + FriendlyPotato.FateOffset));
@@ -78,7 +76,7 @@ public sealed class LocatorWindow : Window, IDisposable
             return;
         }
 
-        var playerHeight = FriendlyPotato.ClientState.LocalPlayer?.Position.Y ?? 0f;
+        var playerHeight = FriendlyPotato.LastPlayerPosition.Y;
 
         foreach (var id in visible)
         {
