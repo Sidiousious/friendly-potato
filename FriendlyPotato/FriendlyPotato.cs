@@ -586,8 +586,6 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
                 friends++;
             }
 
-            continue;
-
             foreach (var status in player.Character.StatusList)
             {
                 if (Configuration.DebugStatuses && status.RemainingTime > 0)
