@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.21.1"></a>
+## 1.21.1 (2025-12-18)
+
+### Bug Fixes
+
+* map flagging
+
 <a name="1.21.0"></a>
 ## 1.21.0 (2025-10-21)
 
