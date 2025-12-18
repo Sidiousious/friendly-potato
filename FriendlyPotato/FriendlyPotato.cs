@@ -310,7 +310,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
     private static unsafe bool IsVisible(IGameObject gameObject)
     {
         var csObject = (GameObject*)gameObject.Address;
-        return (csObject->RenderFlags & RenderFlagHidden) == 0;
+        return (csObject->RenderFlags & VisibilityFlags.Model) == 0;
     }
 
     private static bool IsTreasureCoffer(IGameObject o)
@@ -733,11 +733,23 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         ChatGui.Print(message.BuiltString);
     }
 
-    internal static void SetMapFlag(Vector2 position)
+    internal static unsafe void SetMapFlag(Vector2 position)
     {
-        var flagCoords = PositionToFlag(position);
-        var mapLink = new MapLinkPayload(ClientState.TerritoryType, ClientState.MapId, flagCoords.X, flagCoords.Y);
-        GameGui.OpenMapWithMapLink(mapLink);
+        // var flagCoords = PositionToFlag(position);
+        // var mapLink = new MapLinkPayload(ClientState.TerritoryType, ClientState.MapId, flagCoords.X, flagCoords.Y);
+        // if (!GameGui.OpenMapWithMapLink(mapLink))
+        // {
+        //     PluginLog.Error("Failed to open map with map link payload.");
+        // }
+        var map = AgentMap.Instance();
+        if (map == null)
+        {
+            PluginLog.Error("Failed to open map: AgentMap instance is null.");
+            return;
+        }
+        map->FlagMarkerCount = 0;
+        map->SetFlagMapMarker(ClientState.TerritoryType, ClientState.MapId, position.X, position.Y);
+        map->OpenMap(ClientState.MapId, ClientState.TerritoryType);
     }
 
     private static void EnsureIsOnFramework()
@@ -753,17 +765,10 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
 
     private void OnDebugCommand(string command, string args)
     {
-        foreach (var player in playerInformation.Players)
-        {
-            PluginLog.Debug($"{player.Character.Name} status length: {player.Character.StatusList.Length}");
-            foreach (var status in player.Character.StatusList)
-            {
-                PluginLog.Debug(
-                    $"Status {status.StatusId} remaining {status.RemainingTime}");
-            }
-        }
-        // var pos = ObjectTable.LocalPlayer!.Position;
-        // var posFlat = new Vector2(pos.X, pos.Z);
+        PluginLog.Debug($"Player's job abbreviation is {ObjectTable.LocalPlayer?.ClassJob.ValueNullable?.Abbreviation.ToString()}");
+        var pos = ObjectTable.LocalPlayer!.Position;
+        var posFlat = new Vector2(pos.X, pos.Z);
+        SendChatFlag(posFlat, GetInstance(), "Debug flag from /fpotdbg", SeColorWhite);
         // PluginLog.Debug(
         //     $"Current Position: {posFlat} - {PositionToFlag(posFlat)} - {ClientState.TerritoryType} - {ClientState.MapId}");
         // var target = ObjectTable.LocalPlayer.TargetObject;
