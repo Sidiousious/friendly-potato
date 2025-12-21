@@ -57,6 +57,13 @@ public class ConfigWindow : Window, IDisposable
                 configuration.Save();
             }
 
+            var restoreCommandPanel = configuration.RestoreCommandPanel;
+            if (ImGui.Checkbox("Keep Command Panel open", ref restoreCommandPanel))
+            {
+                configuration.RestoreCommandPanel = restoreCommandPanel;
+                configuration.Save();
+            }
+
             ImGui.Spacing();
         }
 

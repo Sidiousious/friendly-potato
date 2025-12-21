@@ -47,6 +47,9 @@ public class Configuration : IPluginConfiguration
     public bool HighlightInactive { get; set; } = false;
     public int InactivityThreshold { get; set; } = 14;
 
+    // Misc
+    public bool RestoreCommandPanel { get; set; } = false;
+
     // Debug
     public bool DebugList { get; set; } = false;
     public bool DebugStatuses { get; set; } = false;

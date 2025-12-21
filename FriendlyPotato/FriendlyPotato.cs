@@ -10,6 +10,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
+using Dalamud.Game.ClientState;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.ClientState.Objects.SubKinds;
@@ -119,6 +120,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
     private readonly Payload weesIcon = new IconPayload(BitmapFontIcon.Meteor);
 
     public readonly WindowSystem WindowSystem = new("FriendlyPotato");
+    private readonly CommandPanel commandPanel;
 
     public FriendlyPotato()
     {
@@ -127,6 +129,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         ConfigWindow = new ConfigWindow(this);
         PlayerListWindow = new PlayerListWindow(this, playerInformation);
         LocatorWindow = new LocatorWindow(this);
+        commandPanel = new(Configuration);
 
         WindowSystem.AddWindow(ConfigWindow);
         WindowSystem.AddWindow(PlayerListWindow);
@@ -169,7 +172,8 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         aRanks = hunts.ARanks;
         bRanks = hunts.BRanks;
 
-        ClientState.TerritoryChanged += TerritoryChanged;
+        // ZoneInit occurs also on instance hops, TerritoryChanged only occurs when changing areas altogether
+        ClientState.ZoneInit += ZoneInit;
 
         AddonLifecycle.RegisterListener(AddonEvent.PostRequestedUpdate, "CrossWorldLinkshell", OnCWLSEvent);
         AddonLifecycle.RegisterListener(AddonEvent.PostRequestedUpdate, "LinkShell", OnLSEvent);
@@ -249,7 +253,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         CommandManager.RemoveHandler(CommandName);
         CommandManager.RemoveHandler(DebugCommandName);
 
-        ClientState.TerritoryChanged -= TerritoryChanged;
+        ClientState.ZoneInit -= ZoneInit;
 
         AddonLifecycle.UnregisterListener(AddonEvent.PostRequestedUpdate, "CrossWorldLinkshell", OnCWLSEvent);
         AddonLifecycle.UnregisterListener(AddonEvent.PostRequestedUpdate, "LinkShell", OnLSEvent);
@@ -265,9 +269,11 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         ProcessLinkshellUsers();
     }
 
-    private static void TerritoryChanged(ushort _)
+    private void ZoneInit(ZoneInitEventArgs args)
     {
         ObjectLocations.Clear();
+        PluginLog.Debug("ZoneInit");
+        commandPanel.ZoneInit();
     }
 
     public static string AssetPath(string assetName)
@@ -292,6 +298,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         LastPlayerPosition = ObjectTable.LocalPlayer.Position;
         UpdatePlayerList();
         UpdateDtrBar();
+        commandPanel.Update();
 
         if (LocatorWindow.IsOpen != Configuration.ShowHuntLocator) LocatorWindow.Toggle();
 
@@ -752,7 +759,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         map->OpenMap(ClientState.MapId, ClientState.TerritoryType);
     }
 
-    private static void EnsureIsOnFramework()
+    public static void EnsureIsOnFramework()
     {
         if (!Framework.IsInFrameworkUpdateThread)
             throw new InvalidOperationException("This method must be called from the framework update thread.");
