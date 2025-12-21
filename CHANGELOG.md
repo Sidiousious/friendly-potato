@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.22.0"></a>
+## 1.22.0 (2025-12-21)
+
+### Features
+
+* keep command panel open through zone transitions
+
 <a name="1.21.3"></a>
 ## 1.21.3 (2025-12-21)
 
