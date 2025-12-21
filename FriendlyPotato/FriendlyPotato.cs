@@ -698,8 +698,8 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
     public static double DistanceToTarget(Vector3 pos)
     {
         return Vector2.Distance(
-            new Vector2(ObjectTable.LocalPlayer!.Position.X,
-                        ObjectTable.LocalPlayer.Position.Z),
+            new Vector2(LastPlayerPosition.X,
+                        LastPlayerPosition.Z),
             new Vector2(pos.X, pos.Z));
     }
 
