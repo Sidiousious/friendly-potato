@@ -134,6 +134,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         WindowSystem.AddWindow(ConfigWindow);
         WindowSystem.AddWindow(PlayerListWindow);
         WindowSystem.AddWindow(LocatorWindow);
+        WindowSystem.AddWindow(commandPanel);
 
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {
@@ -176,7 +177,33 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         ClientState.ZoneInit += ZoneInit;
 
         AddonLifecycle.RegisterListener(AddonEvent.PostRequestedUpdate, "CrossWorldLinkshell", OnCWLSEvent);
+        AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "CrossWorldLinkshell", HighlightCrossworldLinkshellUsers);
         AddonLifecycle.RegisterListener(AddonEvent.PostRequestedUpdate, "LinkShell", OnLSEvent);
+        AddonLifecycle.RegisterListener(AddonEvent.PostDraw, "LinkShell", HighlightLinkshellUsers);
+    }
+
+    public void Dispose()
+    {
+        Framework.Update -= FrameworkOnUpdateEvent;
+        ClientState.Logout -= Logout;
+
+        WindowSystem.RemoveAllWindows();
+
+        NearbyDtrBarEntry.Remove();
+        ConfigWindow.Dispose();
+        PlayerListWindow.Dispose();
+        LocatorWindow.Dispose();
+        commandPanel.Dispose();
+
+        CommandManager.RemoveHandler(CommandName);
+        CommandManager.RemoveHandler(DebugCommandName);
+
+        ClientState.ZoneInit -= ZoneInit;
+
+        AddonLifecycle.UnregisterListener(AddonEvent.PostRequestedUpdate, "CrossWorldLinkshell", OnCWLSEvent);
+        AddonLifecycle.UnregisterListener(AddonEvent.PostDraw, "CrossWorldLinkshell", HighlightCrossworldLinkshellUsers);
+        AddonLifecycle.UnregisterListener(AddonEvent.PostRequestedUpdate, "LinkShell", OnLSEvent);
+        AddonLifecycle.UnregisterListener(AddonEvent.PostDraw, "LinkShell", HighlightLinkshellUsers);
     }
 
     public static RuntimeDataManager RuntimeData { get; private set; } = null!;
@@ -238,27 +265,6 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
     private IDtrBarEntry NearbyDtrBarEntry { get; set; }
     public static Vector3 LastPlayerPosition { get; set; } = Vector3.Zero;
 
-    public void Dispose()
-    {
-        Framework.Update -= FrameworkOnUpdateEvent;
-        ClientState.Logout -= Logout;
-
-        WindowSystem.RemoveAllWindows();
-
-        NearbyDtrBarEntry.Remove();
-        ConfigWindow.Dispose();
-        PlayerListWindow.Dispose();
-        LocatorWindow.Dispose();
-
-        CommandManager.RemoveHandler(CommandName);
-        CommandManager.RemoveHandler(DebugCommandName);
-
-        ClientState.ZoneInit -= ZoneInit;
-
-        AddonLifecycle.UnregisterListener(AddonEvent.PostRequestedUpdate, "CrossWorldLinkshell", OnCWLSEvent);
-        AddonLifecycle.UnregisterListener(AddonEvent.PostRequestedUpdate, "LinkShell", OnLSEvent);
-    }
-
     private static void OnCWLSEvent(AddonEvent _, AddonArgs __)
     {
         ProcessCrossworldLinkshellUsers();
@@ -272,8 +278,6 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
     private void ZoneInit(ZoneInitEventArgs args)
     {
         ObjectLocations.Clear();
-        PluginLog.Debug("ZoneInit");
-        commandPanel.ZoneInit();
     }
 
     public static string AssetPath(string assetName)
@@ -298,15 +302,12 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         LastPlayerPosition = ObjectTable.LocalPlayer.Position;
         UpdatePlayerList();
         UpdateDtrBar();
-        commandPanel.Update();
 
         if (LocatorWindow.IsOpen != Configuration.ShowHuntLocator) LocatorWindow.Toggle();
 
         UpdateVisibleHunts();
         UpdateVisibleFates();
         UpdateVisibleTreasure();
-        HighlightLinkshellUsers();
-        HighlightCrossworldLinkshellUsers();
     }
 
     private static bool IsTreasureHuntArea()
@@ -772,10 +773,22 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
 
     private void OnDebugCommand(string command, string args)
     {
-        PluginLog.Debug($"Player's job abbreviation is {ObjectTable.LocalPlayer?.ClassJob.ValueNullable?.Abbreviation.ToString()}");
-        var pos = ObjectTable.LocalPlayer!.Position;
-        var posFlat = new Vector2(pos.X, pos.Z);
-        SendChatFlag(posFlat, GetInstance(), "Debug flag from /fpotdbg", SeColorWhite);
+        // PluginLog.Debug($"Player's job abbreviation is {ObjectTable.LocalPlayer?.ClassJob.ValueNullable?.Abbreviation.ToString()}");
+        // var pos = ObjectTable.LocalPlayer!.Position;
+        // var posFlat = new Vector2(pos.X, pos.Z);
+        // SendChatFlag(posFlat, GetInstance(), "Debug flag from /fpotdbg", SeColorWhite);
+        // unsafe
+        // {
+        //     var addonPtr = GameGui.GetAddonByName("QuickPanel");
+        //     if (addonPtr == nint.Zero) return;
+
+        //     var addon = (AtkUnitBase*)addonPtr.Address;
+        //     for (uint i = 0; i < addon->RootNode->ChildCount; i++)
+        //     {
+        //         var node = addon->GetComponentNodeById(i);
+        //         PluginLog.Debug($"{i}: {(nint)node:X16}");
+        //     }
+        // }
         // PluginLog.Debug(
         //     $"Current Position: {posFlat} - {PositionToFlag(posFlat)} - {ClientState.TerritoryType} - {ClientState.MapId}");
         // var target = ObjectTable.LocalPlayer.TargetObject;
@@ -925,7 +938,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         }
     }
 
-    private unsafe void HighlightCrossworldLinkshellUsers()
+    private unsafe void HighlightCrossworldLinkshellUsers(AddonEvent type, AddonArgs args)
     {
         if (!Configuration.HighlightInactive) return;
 
@@ -968,7 +981,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         }
     }
 
-    private unsafe void HighlightLinkshellUsers()
+    private unsafe void HighlightLinkshellUsers(AddonEvent type, AddonArgs args)
     {
         if (!Configuration.HighlightInactive) return;
 

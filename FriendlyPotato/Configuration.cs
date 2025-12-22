@@ -6,6 +6,9 @@ namespace FriendlyPotato;
 [Serializable]
 public class Configuration : IPluginConfiguration
 {
+    public delegate void OnSave();
+    public event OnSave? OnSaved;
+
     // DTR
     public bool DtrEnabled { get; set; } = true;
     public bool DtrTotalEnabled { get; set; } = true;
@@ -67,5 +70,6 @@ public class Configuration : IPluginConfiguration
     public void Save()
     {
         FriendlyPotato.PluginInterface.SavePluginConfig(this);
+        OnSaved?.Invoke();
     }
 }
