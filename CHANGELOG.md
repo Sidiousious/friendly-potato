@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.22.1"></a>
+## 1.22.1 (2025-12-22)
+
+### Bug Fixes
+
+* more robust command panel lock
+
 <a name="1.22.0"></a>
 ## 1.22.0 (2025-12-21)
 
