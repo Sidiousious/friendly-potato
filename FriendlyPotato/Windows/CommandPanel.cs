@@ -37,14 +37,16 @@ internal class CommandPanel : Window, IDisposable
         RespectCloseHotkey = false;
         DisableWindowSounds = true;
 
-        AL.RegisterListener(AddonEvent.PreDraw, "QuickPanel", PanelDrawing);
+        AL.RegisterListener(AddonEvent.PostOpen, "QuickPanel", PanelDrawing);
         AL.RegisterListener(AddonEvent.PreClose, "QuickPanel", PanelClosing);
+        AL.RegisterListener(AddonEvent.PostClose, "QuickPanel", PanelClosed);
     }
 
     public void Dispose()
     {
-        AL.UnregisterListener(AddonEvent.PreClose, "QuickPanel", PanelClosing);
+        AL.UnregisterListener(AddonEvent.PostOpen, "QuickPanel", PanelClosing);
         AL.UnregisterListener(AddonEvent.PreDraw, "QuickPanel", PanelDrawing);
+        AL.UnregisterListener(AddonEvent.PostClose, "QuickPanel", PanelClosed);
     }
 
     private unsafe void PanelDrawing(AddonEvent type, AddonArgs args)
@@ -53,9 +55,14 @@ internal class CommandPanel : Window, IDisposable
             this.Toggle();
     }
 
+    private void PanelClosed(AddonEvent type, AddonArgs args)
+    {
+        if (this.IsOpen)
+            this.Toggle();
+    }
+
     private unsafe void PanelClosing(AddonEvent type, AddonArgs args)
     {
-        this.Toggle();
         if (!config.RestoreCommandPanel)
             return;
 
@@ -78,6 +85,8 @@ internal class CommandPanel : Window, IDisposable
         }
 
         qp->OpenPanel(page, false, false);
+        if (!this.IsOpen)
+            this.Toggle();
     }
 
     private Vector2? CommandPanelPosition()
