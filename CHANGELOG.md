@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.22.4"></a>
+## 1.22.4 (2026-01-15)
+
+### Bug Fixes
+
+* noinputs while locator has no content
+
 <a name="1.22.3"></a>
 ## 1.22.3 (2025-12-23)
 
