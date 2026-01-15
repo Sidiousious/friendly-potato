@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using Dalamud.Game.Addon.Lifecycle;
@@ -773,6 +774,25 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
 
     private void OnDebugCommand(string command, string args)
     {
+        Framework.RunOnTick(() =>
+        {
+            unsafe
+            {
+                // var control = Control.Instance();
+                // PluginLog.Debug($"Control address: {(nint)control:X16} ; walking address: {(nint)control + 29976:X16}");
+                // PluginLog.Debug($"control: {control->IsWalking} {Marshal.ReadByte((nint)control + 29976)} {Marshal.ReadByte((nint)control + 30260)} {Marshal.ReadByte((nint)control + 0x76a0)}");
+                //control->IsWalking = true; // doesn't work during auto-run
+                //Marshal.WriteByte((nint)control + 29976, 0x1); // works for both auto-run and manual movement
+                var camera = FFXIVClientStructs.FFXIV.Client.Graphics.Scene.CameraManager.Instance()->CurrentCamera;
+                PluginLog.Debug($"Camera address: {(nint)camera:X16}");
+                var bytes = new List<byte>();
+                for (var i = 0; i < 256 /* size of Camera struct */; i++)
+                {
+                    bytes.Add(Marshal.ReadByte((nint)camera + i));
+                }
+                PluginLog.Debug($"Camera bytes: {BitConverter.ToString(bytes.ToArray())}");
+            }
+        }, TimeSpan.FromSeconds(1));
         // PluginLog.Debug($"Player's job abbreviation is {ObjectTable.LocalPlayer?.ClassJob.ValueNullable?.Abbreviation.ToString()}");
         // var pos = ObjectTable.LocalPlayer!.Position;
         // var posFlat = new Vector2(pos.X, pos.Z);

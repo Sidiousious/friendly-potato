@@ -60,6 +60,12 @@ public sealed class LocatorWindow : Window, IDisposable
             Flags &= ~ImGuiWindowFlags.NoBackground;
         else
             Flags |= ImGuiWindowFlags.NoBackground;
+
+        // Workaround some naughty plugins impacting the window size
+        if (arrowCount > 0)
+            Flags &= ~ImGuiWindowFlags.NoInputs;
+        else
+            Flags |= ImGuiWindowFlags.NoInputs;
     }
 
     public override void Draw()

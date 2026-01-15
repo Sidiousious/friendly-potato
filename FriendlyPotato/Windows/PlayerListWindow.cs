@@ -295,7 +295,8 @@ public class PlayerListWindow : Window, IDisposable
         try
         {
             action();
-        } finally
+        }
+        finally
         {
             ImGui.PopStyleColor(1);
         }
