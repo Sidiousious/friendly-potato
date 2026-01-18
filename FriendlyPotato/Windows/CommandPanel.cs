@@ -40,6 +40,14 @@ internal class CommandPanel : Window, IDisposable
         AL.RegisterListener(AddonEvent.PostOpen, "QuickPanel", PanelDrawing);
         AL.RegisterListener(AddonEvent.PreClose, "QuickPanel", PanelClosing);
         AL.RegisterListener(AddonEvent.PostClose, "QuickPanel", PanelClosed);
+
+        FriendlyPotato.ClientState.Logout += OnLogout;
+    }
+
+    private void OnLogout(int type, int code)
+    {
+        if (this.IsOpen)
+            this.Toggle();
     }
 
     public void Dispose()
@@ -70,6 +78,8 @@ internal class CommandPanel : Window, IDisposable
         Log.Debug($"[CommandPanel] {type} - {args} - {qp->IsAddonReady()} - {qp->IsAddonShown()} - {qp->ActivePanel}");
         Framework.RunOnTick(() =>
         {
+            if (!FriendlyPotato.ClientState.IsLoggedIn)
+                return;
             OpenPanel(qp->ActivePanel);
         }, TimeSpan.FromMilliseconds(50));
     }
