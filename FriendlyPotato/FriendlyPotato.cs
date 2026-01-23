@@ -715,10 +715,18 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
     public static Vector2 PositionToFlag(Vector2 position)
     {
         var scale = 100f;
-        // HW zones have different scale
-        if (ClientState.MapId is >= 211 and <= 216) scale = 95f;
+        var x = position.X;
+        var y = position.Y;
+        // Handle special scaling for certain maps like HW where flags go to 44x44 instead of the standard 42x42
+        if (DataManager.GetExcelSheet<Lumina.Excel.Sheets.Map>()?.TryGetRow(ClientState.MapId, out var mapRow) == true)
+        {
+            PluginLog.Verbose($"Map {ClientState.MapId} has size factor {mapRow.SizeFactor} and offsets {mapRow.OffsetX},{mapRow.OffsetY}, input position {position}");
+            scale = mapRow.SizeFactor;
+            x += mapRow.OffsetX;
+            y += mapRow.OffsetY;
+        }
 
-        return new Vector2(ScaleCoord(position.X), ScaleCoord(position.Y));
+        return new Vector2(ScaleCoord(x), ScaleCoord(y));
 
         float ScaleCoord(float coord)
         {
@@ -774,6 +782,9 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
 
     private void OnDebugCommand(string command, string args)
     {
+
+        SendChatFlag(new Vector2(LastPlayerPosition.X, LastPlayerPosition.Z), GetInstance(), "Debug flag from /fpotdbg", SeColorWhite);
+
         Framework.RunOnTick(() =>
         {
             unsafe
