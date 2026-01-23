@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.22.6"></a>
+## 1.22.6 (2026-01-23)
+
+### Bug Fixes
+
+* use game data for map scaling and offsets
+
 <a name="1.22.5"></a>
 ## 1.22.5 (2026-01-18)
 
