@@ -121,16 +121,7 @@ public class PlayerListWindow : Window, IDisposable
 
         ImGui.Text(string.Join(" & ", typeHeaders) + " Players:");
 
-        var cameraAimVector = CameraAngles.OwnAimVector2();
-
-        if (cameraAimVector == Vector2.Zero)
-        {
-            // No camera exists, assume loading screen and disable unnecessary listing
-            ImGui.TextWrapped("<Disabled while player has no camera>");
-            return;
-        }
-
-        var cameraAimAngle = CameraAngles.AimAngle(cameraAimVector);
+        var cameraAimAngle = CameraAngles.OwnCamAngle();
 
         var drawnPlayers = playerInformation.Players
                                             .Where(p =>

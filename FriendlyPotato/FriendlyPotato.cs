@@ -360,7 +360,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
 
                 var objLoc = new ObjectLocation
                 {
-                    Angle = (float)CameraAngles.AngleToTarget(obj.Position, CameraAngles.OwnAimAngle()),
+                    Angle = (float)CameraAngles.AngleToTarget(obj.Position, CameraAngles.OwnCamAngle()),
                     Distance = DistanceToTarget(obj.Position),
                     Position = new Vector2(obj.Position.X, obj.Position.Z),
                     Height = obj.Position.Y,
@@ -396,7 +396,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
 
             var objLoc = new ObjectLocation
             {
-                Angle = (float)CameraAngles.AngleToTarget(fate.Position, CameraAngles.OwnAimAngle()),
+                Angle = (float)CameraAngles.AngleToTarget(fate.Position, CameraAngles.OwnCamAngle()),
                 Distance = DistanceToTarget(fate.Position),
                 Position = pos,
                 Height = fate.Position.Y,
@@ -488,7 +488,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
 
             var objLoc = new ObjectLocation
             {
-                Angle = (float)CameraAngles.AngleToTarget(mob.Position, CameraAngles.OwnAimAngle()),
+                Angle = (float)CameraAngles.AngleToTarget(mob.Position, CameraAngles.OwnCamAngle()),
                 Distance = DistanceToTarget(mob.Position),
                 Position = pos,
                 Height = mob.Position.Y,
@@ -512,7 +512,7 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
 
                 var objLoc = new ObjectLocation
                 {
-                    Angle = (float)CameraAngles.AngleToTarget(mob.Position, CameraAngles.OwnAimAngle()),
+                    Angle = (float)CameraAngles.AngleToTarget(mob.Position, CameraAngles.OwnCamAngle()),
                     Distance = DistanceToTarget(mob.Position),
                     Position = pos,
                     Name = mob.Name.TextValue,
@@ -720,7 +720,6 @@ public sealed partial class FriendlyPotato : IDalamudPlugin
         // Handle special scaling for certain maps like HW where flags go to 44x44 instead of the standard 42x42
         if (DataManager.GetExcelSheet<Lumina.Excel.Sheets.Map>()?.TryGetRow(ClientState.MapId, out var mapRow) == true)
         {
-            PluginLog.Verbose($"Map {ClientState.MapId} has size factor {mapRow.SizeFactor} and offsets {mapRow.OffsetX},{mapRow.OffsetY}, input position {position}");
             scale = mapRow.SizeFactor;
             x += mapRow.OffsetX;
             y += mapRow.OffsetY;

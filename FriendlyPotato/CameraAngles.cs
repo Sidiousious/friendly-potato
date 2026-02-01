@@ -10,7 +10,7 @@ public static class CameraAngles
     {
         var dirVector3 = FriendlyPotato.LastPlayerPosition - pos;
         var dirVector = Vector2.Normalize(new Vector2(dirVector3.X, dirVector3.Z));
-        var dirAngle = AimAngle(dirVector);
+        var dirAngle = AimAngle(dirVector) - 90f;
         var angularDifference = dirAngle - aimAngle;
         switch (angularDifference)
         {
@@ -25,30 +25,19 @@ public static class CameraAngles
         return angularDifference;
     }
 
-    public static double OwnAimAngle()
-    {
-        return AimAngle(OwnAimVector2());
-    }
-
     public static double AimAngle(Vector2 aimVector)
     {
         return Math.Atan2(aimVector.Y, aimVector.X) * 180f / Math.PI;
     }
 
-    public static unsafe Vector2 OwnAimVector2()
+    public static unsafe float OwnCamAngle()
     {
-        try
-        {
-            var camera = CameraManager.Instance()->CurrentCamera;
-            var threeDAim =
-                new Vector3(camera->RenderCamera->Origin.X, camera->RenderCamera->Origin.Y,
-                            camera->RenderCamera->Origin.Z) - FriendlyPotato.LastPlayerPosition;
-            return Vector2.Normalize(new Vector2(threeDAim.X, threeDAim.Z));
-        }
-        catch (NullReferenceException)
+        var camera = FFXIVClientStructs.FFXIV.Client.Game.Control.CameraManager.Instance()->GetActiveCamera();
+        if ((nint)camera == 0)
         {
             // Camera does not exist during loading screens
-            return Vector2.Zero;
+            return 0;
         }
+        return -(camera->ZoomMode == FFXIVClientStructs.FFXIV.Client.Game.CameraZoomMode.FirstPerson ? camera->DirH + MathF.PI : camera->DirH) * (180f / MathF.PI);
     }
 }
