@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [versionize](https://github.com/versionize/versionize) for commit guidelines.
 
+<a name="1.22.7"></a>
+## 1.22.7 (2026-02-01)
+
+### Bug Fixes
+
+* locator angles in first person
+
 <a name="1.22.6"></a>
 ## 1.22.6 (2026-01-23)
 
